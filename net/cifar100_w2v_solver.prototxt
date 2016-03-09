@@ -1,5 +1,4 @@
-train_net: "net/cifar100_w2v_train_test.prototxt"
-test_net: "net/cifar100_w2v_train_test.prototxt"
+net: "net/cifar100_w2v_train_test.prototxt"
 
 test_iter: 100
 test_interval: 1000
