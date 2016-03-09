@@ -2,3 +2,6 @@
 
 # Don't track anything in the data folder
 data
+
+# Don't automatically track trained networks
+net_output
