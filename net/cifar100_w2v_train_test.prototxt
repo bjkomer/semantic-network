@@ -2,12 +2,23 @@ layer {
   name: "data"
   type: "HDF5Data"
   top: "data"
-  top: "label_w2v"
   include {
     phase: TRAIN
   }
   hdf5_data_param {
     source: "data/cifar_100_caffe_hdf5/train.txt"
+    batch_size: 100
+  }
+}
+layer {
+  name: "label_w2v"
+  type: "HDF5Data"
+  top: "label_w2v"
+  include {
+    phase: TRAIN
+  }
+  hdf5_data_param {
+    source: "data/cifar_100_caffe_hdf5/train_w2v_label.txt"
     batch_size: 100
   }
 }
@@ -21,6 +32,18 @@ layer {
   }
   hdf5_data_param {
     source: "data/cifar_100_caffe_hdf5/test.txt"
+    batch_size: 100
+  }
+}
+layer {
+  name: "label_w2v"
+  type: "HDF5Data"
+  top: "label_w2v"
+  include {
+    phase: TEST
+  }
+  hdf5_data_param {
+    source: "data/cifar_100_caffe_hdf5/test_w2v_label.txt"
     batch_size: 100
   }
 }
