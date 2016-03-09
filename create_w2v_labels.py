@@ -7,7 +7,7 @@ import time
 import word2vec
 import getpass
 
-DIM = 100
+DIM = 200
 NUM_TRAIN = 50000
 NUM_TEST = 10000
 
@@ -52,7 +52,7 @@ ftrain = h5py.File(fnametrain, 'r')
 ftrain_label = h5py.File(fnametrain_label, 'w')
 train_label = np.zeros((NUM_TRAIN, DIM))
 
-for i, label in enumerate(ftrain['labels_fine']):
+for i, label in enumerate(ftrain['label_fine']):
     train_label[i,:] = model[classes[label]]
 
 ftrain_label.create_dataset('label_w2v', data=train_label)
@@ -63,7 +63,7 @@ ftest = h5py.File(fnametest, 'r')
 ftest_label = h5py.File(fnametest_label, 'w')
 test_label = np.zeros((NUM_TEST, DIM))
 
-for i, label in enumerate(ftest['labels_fine']):
+for i, label in enumerate(ftest['label_fine']):
     test_label[i,:] = model[classes[label]]
 
 ftest_label.create_dataset('label_w2v', data=test_label)
