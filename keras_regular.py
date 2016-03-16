@@ -27,19 +27,23 @@ img_channels = 3
 print('X_train shape:', X_train.shape)
 print(X_train.shape[0], 'train samples')
 print(X_test.shape[0], 'test samples')
+print('y_train_fine shape:', y_train_fine.shape)
+print('y_train_coarse shape:', y_train_coarse.shape)
 
 # convert class vectors to binary class matrices
 Y_train_fine = np_utils.to_categorical(y_train_fine, nb_classes_fine)
-Y_train_fine = np_utils.to_categorical(y_train_fine, nb_classes_fine)
+Y_train_coarse = np_utils.to_categorical(y_train_coarse, nb_classes_coarse)
+Y_test_fine = np_utils.to_categorical(y_test_fine, nb_classes_fine)
 Y_test_coarse = np_utils.to_categorical(y_test_coarse, nb_classes_coarse)
-Y_test_coarse = np_utils.to_categorical(y_test_coarse, nb_classes_coarse)
+print('Y_train_fine shape:', Y_train_fine.shape)
+print('Y_train_coarse shape:', Y_train_coarse.shape)
 
 ######################
 # Beginning of Model #
 ######################
 model = Graph()
 
-model.add_input(name='input', input_shape=(3,32,32))
+model.add_input(name='input', input_shape=(img_channels, img_rows, img_cols))
 
 model.add_node(Convolution2D(32, 3, 3, border_mode='same',
                         input_shape=(img_channels, img_rows, img_cols)),
@@ -51,7 +55,7 @@ model.add_node(Convolution2D(32, 3, 3),
 model.add_node(Activation('relu'),
                name='relu1-1', input='conv1-1')
 model.add_node(MaxPooling2D(pool_size=(2, 2)),
-               name='pool1', input='conv1-1')
+               name='pool1', input='relu1-1')
 model.add_node(Dropout(0.25),
                name='drop1', input='pool1')
 
@@ -94,7 +98,7 @@ model.add_node(Dense(nb_classes_fine),
                name='dense-f', input='drop4')
 model.add_node(Activation('softmax'),
                name='soft-f', input='dense-f')
-model.add_node(Dense(nb_classes_course),
+model.add_node(Dense(nb_classes_coarse),
                name='dense-c', input='drop4')
 model.add_node(Activation('softmax'),
                name='soft-c', input='dense-c')
@@ -106,8 +110,9 @@ model.add_output(name='output_coarse', input='soft-c')
 
 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(loss={'output_fine':'categorical_crossentropy','output_coarse':'categorical_crossentropy'}, optimizer=sgd)
-history = model.fit({'input':X_train, 'output_fine':y_train_fine, 'output_coarse':y_train_coarse}, nb_epoch=nb_epoch,
-                    validation_data={'input':X_test, 'output_fine':y_test_fine, 'output_coarse':y_test_coarse})
+history = model.fit({'input':X_train, 'output_fine':Y_train_fine, 'output_coarse':Y_train_coarse}, 
+                    batch_size=batch_size, nb_epoch=nb_epoch,
+                    validation_data={'input':X_test, 'output_fine':Y_test_fine, 'output_coarse':Y_test_coarse})
 
 model.save_weights('keras_cifar100_weights.h5')
 json_string = model.to_json()
