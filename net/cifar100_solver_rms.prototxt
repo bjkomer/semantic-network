@@ -18,7 +18,7 @@ max_iter: 150000
 
 snapshot: 50000
 snapshot_prefix: "net_output/cifar100_snapshot"
-solver_mode: CPU
+solver_mode: GPU
 
 type: "RMSProp"
 rms_decay: 0.98

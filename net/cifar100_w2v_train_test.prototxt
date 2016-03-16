@@ -26,7 +26,6 @@ layer {
   name: "data"
   type: "HDF5Data"
   top: "data"
-  top: "label_w2v"
   include {
     phase: TEST
   }
@@ -205,19 +204,19 @@ layer {
   bottom: "ip1"
   top: "ip_c"
   inner_product_param {
-    num_output: 100
+    num_output: 200
     weight_filler {
       type: "xavier"
     }
   }
 }
-layer {
-  name: "accuracy"
-  type: "Accuracy"
-  bottom: "ip_c"
-  bottom: "label_w2v"
-  top: "accuracy"
-}
+#layer {
+#  name: "accuracy"
+#  type: "Accuracy"
+#  bottom: "ip_c"
+#  bottom: "label_w2v"
+#  top: "accuracy"
+#}
 layer {
   name: "loss"
   type: "EuclideanLoss"

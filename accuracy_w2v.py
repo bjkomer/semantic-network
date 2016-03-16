@@ -9,19 +9,21 @@ import h5py
 user = getpass.getuser()
 if user == 'ctnuser':
     caffe_root = '/home/ctnuser/bjkomer/caffe/'
-    root = '/home/ctnuser/bjkomer/'
+    root = '/home/ctnuser/bjkomer/semantic-network/'
 elif user == 'bjkomer':
     caffe_root = '/home/bjkomer/caffe/'
-    root = '/home/bjkomer/'
+    root = '/home/bjkomer/semantic-network/'
 
 sys.path.insert(0, caffe_root + 'python')
 
 import caffe
-
+"""
 if user == 'ctnuser':
     caffe.set_mode_gpu()
 else:
     caffe.set_mode_cpu()
+"""
+caffe.set_mode_cpu()
 
 # load images and output labels
 DIM = 200
@@ -40,12 +42,21 @@ train_label = np.zeros((NUM_TRAIN)) # integer labels
 train_image = np.zeros((NUM_TRAIN, 3, 32, 32)) # actual images
 train_w2v_label = np.zeros((NUM_TRAIN, DIM)) # word2vec labels
 
+print("Loading Training labels and images")
+"""
 for i, label in enumerate(ftrain['label_fine']):
     train_label[i] = label
 for i, image in enumerate(ftrain['data']):
     train_image[i,:] = image
 for i, w2v_label in enumerate(ftrain_w2v['label_w2v']):
     train_w2v_label[i,:] = w2v_label
+"""
+print("Loading Fine Labels")
+train_label = ftrain['label_fine'][()]
+print("Loading Images")
+train_image = ftrain['data'][()]
+print("Loading Word2Vec Labels")
+train_w2v_label = ftrain_w2v['label_w2v'][()]
 
 # Testing
 ftest = h5py.File(fnametest, 'r')
@@ -54,14 +65,24 @@ test_label = np.zeros((NUM_TEST))
 test_image = np.zeros((NUM_TEST, 3, 32, 32))
 test_w2v_label = np.zeros((NUM_TEST, DIM))
 
+print("Loading Testing labels and images")
+"""
 for i, label in enumerate(ftest['label_fine']):
     test_label[i] = label
 for i, image in enumerate(ftest['data']):
     test_image[i,:] = image
 for i, w2v_label in enumerate(ftest_w2v['label_w2v']):
     test_w2v_label[i,:] = w2v_label
+"""
+print("Loading Fine Labels")
+test_label = ftest['label_fine'][()]
+print("Loading Images")
+test_image = ftest['data'][()]
+print("Loading Word2Vec Labels")
+test_w2v_label = ftest_w2v['label_w2v'][()]
 
 # Get all of the unique label vectors
+print("Finding unique label vector set")
 b = np.ascontiguousarray(test_w2v_label).view(np.dtype((np.void, test_w2v_label.dtype.itemsize * test_w2v_label.shape[1])))
 _, idx = np.unique(b, return_index=True)
 all_vectors = test_w2v_label[idx]
@@ -82,6 +103,7 @@ def check_match(output, vector):
     else:
         return 0
 
+print("Setting up caffe network")
 ########################
 # Set up caffe network #
 ########################
@@ -98,7 +120,7 @@ transformer.set_raw_scale('data', 255)  # the reference model operates on images
 transformer.set_channel_swap('data', (2,1,0))  # the reference model has channels in BGR order instead of RGB
 """
 
-batch_size = 10
+batch_size = 100
 output_layer = 'ip_c'
 net.blobs['data'].reshape(batch_size,3,32,32) # Cifar100 uses 32x32
 
@@ -112,11 +134,30 @@ for batch in range(int(NUM_TEST / batch_size)):
 
     for bi in range(batch_size):
 
-      output = net.blobs[layer].data[bi]
+      output = net.blobs[output_layer].data[bi]
       test_result[batch*batch_size+bi] = check_match(output, test_w2v_label[batch*batch_size+bi,:])
 
       # get closest label vector to the output vector
       #label = w2v_classifier.classify(output)
 
 test_accuracy = np.mean(test_result)
+print("Test Accuracy: %f" % test_accuracy)
+
+# run caffe network on training images
+train_result = np.zeros(NUM_TRAIN)
+for batch in range(int(NUM_TRAIN / batch_size)):
+    net.blobs['data'].data[...] = train_image[batch*batch_size:(batch+1)*batch_size,:,:,:]
+    print("Running Testing Batch %i of %i" % (batch, int(NUM_TRAIN / batch_size)))
+    out = net.forward()
+
+    for bi in range(batch_size):
+
+      output = net.blobs[output_layer].data[bi]
+      train_result[batch*batch_size+bi] = check_match(output, train_w2v_label[batch*batch_size+bi,:])
+
+      # get closest label vector to the output vector
+      #label = w2v_classifier.classify(output)
+
+train_accuracy = np.mean(train_result)
+print("Train Accuracy: %f" % train_accuracy)
 print("Test Accuracy: %f" % test_accuracy)
