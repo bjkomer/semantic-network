@@ -9,6 +9,7 @@ from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD
 from keras.utils import np_utils
+import cPickle as pickle
 
 batch_size = 32
 nb_classes_fine = 100
@@ -45,48 +46,101 @@ model = Graph()
 
 model.add_input(name='input', input_shape=(img_channels, img_rows, img_cols))
 
-model.add_node(Convolution2D(32, 3, 3, border_mode='same',
-                        input_shape=(img_channels, img_rows, img_cols)),
-               name='conv1', input='input')
-model.add_node(Activation('relu'),
-               name='relu1', input='conv1')
-model.add_node(Convolution2D(32, 3, 3),
-               name='conv1-1', input='relu1')
-model.add_node(Activation('relu'),
-               name='relu1-1', input='conv1-1')
-model.add_node(MaxPooling2D(pool_size=(2, 2)),
-               name='pool1', input='relu1-1')
-model.add_node(Dropout(0.25),
-               name='drop1', input='pool1')
+#TODO: make things nice and in loops
+model_name = 'conv2'
+if model_name = 'conv6':
 
-model.add_node(Convolution2D(64, 3, 3, border_mode='same'),
-               name='conv2', input='drop1')
-model.add_node(Activation('relu'),
-               name='relu2', input='conv2')
-model.add_node(Convolution2D(64, 3, 3),
-               name='conv2-1', input='relu2')
-model.add_node(Activation('relu'),
-               name='relu2-1', input='conv2-1')
-model.add_node(MaxPooling2D(pool_size=(2, 2)),
-               name='pool2', input='relu2-1')
-model.add_node(Dropout(0.25),
-               name='drop2', input='pool2')
+    model.add_node(Convolution2D(32, 3, 3, border_mode='same',
+                            input_shape=(img_channels, img_rows, img_cols)),
+                   name='conv1', input='input')
+    model.add_node(Activation('relu'),
+                   name='relu1', input='conv1')
+    model.add_node(Convolution2D(32, 3, 3),
+                   name='conv1-1', input='relu1')
+    model.add_node(Activation('relu'),
+                   name='relu1-1', input='conv1-1')
+    model.add_node(MaxPooling2D(pool_size=(2, 2)),
+                   name='pool1', input='relu1-1')
+    model.add_node(Dropout(0.25),
+                   name='drop1', input='pool1')
 
-model.add_node(Convolution2D(64, 3, 3, border_mode='same'),
-               name='conv3', input='drop2')
-model.add_node(Activation('relu'),
-               name='relu3', input='conv3')
-model.add_node(Convolution2D(64, 3, 3),
-               name='conv3-1', input='relu3')
-model.add_node(Activation('relu'),
-               name='relu3-1', input='conv3-1')
-model.add_node(MaxPooling2D(pool_size=(2, 2)),
-               name='pool3', input='relu3-1')
-model.add_node(Dropout(0.25),
-               name='drop3', input='pool3')
+    model.add_node(Convolution2D(64, 3, 3, border_mode='same'),
+                   name='conv2', input='drop1')
+    model.add_node(Activation('relu'),
+                   name='relu2', input='conv2')
+    model.add_node(Convolution2D(64, 3, 3),
+                   name='conv2-1', input='relu2')
+    model.add_node(Activation('relu'),
+                   name='relu2-1', input='conv2-1')
+    model.add_node(MaxPooling2D(pool_size=(2, 2)),
+                   name='pool2', input='relu2-1')
+    model.add_node(Dropout(0.25),
+                   name='drop2', input='pool2')
 
-model.add_node(Flatten(),
-               name='flatten', input='drop3')
+    model.add_node(Convolution2D(64, 3, 3, border_mode='same'),
+                   name='conv3', input='drop2')
+    model.add_node(Activation('relu'),
+                   name='relu3', input='conv3')
+    model.add_node(Convolution2D(64, 3, 3),
+                   name='conv3-1', input='relu3')
+    model.add_node(Activation('relu'),
+                   name='relu3-1', input='conv3-1')
+    model.add_node(MaxPooling2D(pool_size=(2, 2)),
+                   name='pool3', input='relu3-1')
+    model.add_node(Dropout(0.25),
+                   name='drop3', input='pool3')
+    model.add_node(Flatten(),
+                   name='flatten', input='drop3')
+
+elif model_name == 'conv4':
+    model.add_node(Convolution2D(32, 3, 3, border_mode='same',
+                            input_shape=(img_channels, img_rows, img_cols)),
+                   name='conv1', input='input')
+    model.add_node(Activation('relu'),
+                   name='relu1', input='conv1')
+    model.add_node(Convolution2D(32, 3, 3),
+                   name='conv1-1', input='relu1')
+    model.add_node(Activation('relu'),
+                   name='relu1-1', input='conv1-1')
+    model.add_node(MaxPooling2D(pool_size=(2, 2)),
+                   name='pool1', input='relu1-1')
+    model.add_node(Dropout(0.25),
+                   name='drop1', input='pool1')
+
+    model.add_node(Convolution2D(64, 3, 3, border_mode='same'),
+                   name='conv2', input='drop1')
+    model.add_node(Activation('relu'),
+                   name='relu2', input='conv2')
+    model.add_node(Convolution2D(64, 3, 3),
+                   name='conv2-1', input='relu2')
+    model.add_node(Activation('relu'),
+                   name='relu2-1', input='conv2-1')
+    model.add_node(MaxPooling2D(pool_size=(2, 2)),
+                   name='pool2', input='relu2-1')
+    model.add_node(Dropout(0.25),
+                   name='drop2', input='pool2')
+
+    model.add_node(Flatten(),
+                   name='flatten', input='drop2')
+
+elif model_name == 'conv2':
+    model.add_node(Convolution2D(32, 3, 3, border_mode='same',
+                            input_shape=(img_channels, img_rows, img_cols)),
+                   name='conv1', input='input')
+    model.add_node(Activation('relu'),
+                   name='relu1', input='conv1')
+    model.add_node(Convolution2D(32, 3, 3),
+                   name='conv1-1', input='relu1')
+    model.add_node(Activation('relu'),
+                   name='relu1-1', input='conv1-1')
+    model.add_node(MaxPooling2D(pool_size=(2, 2)),
+                   name='pool1', input='relu1-1')
+    model.add_node(Dropout(0.25),
+                   name='drop1', input='pool1')
+
+    model.add_node(Flatten(),
+                   name='flatten', input='drop1')
+
 model.add_node(Dense(512),
                name='dense', input='flatten')
 model.add_node(Activation('relu'),
@@ -114,6 +168,7 @@ history = model.fit({'input':X_train, 'output_fine':Y_train_fine, 'output_coarse
                     batch_size=batch_size, nb_epoch=nb_epoch,
                     validation_data={'input':X_test, 'output_fine':Y_test_fine, 'output_coarse':Y_test_coarse})
 
-model.save_weights('keras_cifar100_weights.h5')
+model.save_weights('keras_cifar100_%s_weights.h5' % model_name)
 json_string = model.to_json()
-open('keras_cifar100_architecture.json', 'w').write(json_string)
+open('keras_cifar100_%s_architecture.json' % model_name, 'w').write(json_string)
+pickle.dump(history, open('keras_cifar100_%s_history.p' % model_name,'r'))
