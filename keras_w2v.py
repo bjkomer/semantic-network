@@ -22,10 +22,11 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.optimizers import SGD
 from keras.utils import np_utils
 import cPickle as pickle
+from network_utils import get_w2v_labels
 
 batch_size = 32
-nb_classes = 20#100
-nb_dim = 100
+nb_classes = 100
+nb_dim = 200 #TODO: try lower numbers
 nb_epoch = 200
 data_augmentation = False#True
 
@@ -35,18 +36,14 @@ img_rows, img_cols = 32, 32
 img_channels = 3
 
 # the data, shuffled and split between train and test sets
-if nb_classes == 20:
-    label_mode='coarse'
-else:
-    label_mode='fine'
 (X_train, y_train), (X_test, y_test) = cifar100.load_data(label_mode='fine')
 print('X_train shape:', X_train.shape)
 print(X_train.shape[0], 'train samples')
 print(X_test.shape[0], 'test samples')
 
 # convert class vectors to binary class matrices
-Y_train = np_utils.to_categorical(y_train, nb_classes)
-Y_test = np_utils.to_categorical(y_test, nb_classes)
+Y_train = get_w2v_labels(y_train, dim=nb_dim)
+Y_test = get_w2v_labels(y_test, dim=nb_dim)
 print('y_train shape:', y_train.shape)
 print('y_train shape:', y_train.shape)
 
@@ -71,12 +68,14 @@ model.add(Flatten())
 model.add(Dense(512))
 model.add(Activation('relu'))
 model.add(Dropout(0.5))
-model.add(Dense(nb_classes))
+model.add(Dense(nb_dim))
 #model.add(Activation('softmax'))
+#TODO: might want a linear activation function here
 
 # let's train the model using SGD + momentum (how original).
-sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-model.compile(loss='mean_squared_error', optimizer=sgd)
+#sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+#model.compile(loss='mean_squared_error', optimizer=sgd)
+model.compile(loss='mean_squared_error', optimizer='rmsprop')
 
 X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
@@ -115,7 +114,7 @@ else:
                         validation_data=(X_test, Y_test),
                         nb_worker=1)
 
-model.save_weights('net_output/keras_cifar10_100_data_%s_weights.h5' % label_mode)
+model.save_weights('net_output/keras_cifar100_w2v_dim_%s_weights.h5' % nb_dim)
 json_string = model.to_json()
-open('net_output/keras_cifar10_100_data_%s_architecture.json' % label_mode, 'w').write(json_string)
-pickle.dump(history.history, open('net_output/keras_cifar10_100_data_%s_history.p' % label_mode,'w'))
+open('net_output/keras_cifar100_w2v_dim_%s_architecture.json' % nb_dim, 'w').write(json_string)
+pickle.dump(history.history, open('net_output/keras_cifar100_w2v_dim_%s_history.p' % nb_dim,'w'))
