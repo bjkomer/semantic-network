@@ -7,7 +7,7 @@ from keras.datasets import cifar100
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential, Graph
 from keras.layers.core import Dense, Dropout, Activation, Flatten
-from keras.layers.convolutional import Convolution2D, MaxPooling2D
+from keras.layers.convolutional import Convolution2D, MaxPooling2D, AveragePooling2D
 from keras.optimizers import SGD
 from keras.utils import np_utils
 import cPickle as pickle
@@ -21,7 +21,7 @@ sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_
 batch_size = 32
 nb_classes_fine = 100
 nb_classes_coarse = 20
-nb_epoch = 200
+nb_epoch = 50#200
 data_augmentation = True
 
 # input image dimensions
@@ -46,6 +46,12 @@ Y_test_coarse = np_utils.to_categorical(y_test_coarse, nb_classes_coarse)
 print('Y_train_fine shape:', Y_train_fine.shape)
 print('Y_train_coarse shape:', Y_train_coarse.shape)
 
+# some preprocessing stuff
+X_train = X_train.astype('float32')
+X_test = X_test.astype('float32')
+X_train /= 255
+X_test /= 255
+
 ######################
 # Beginning of Model #
 ######################
@@ -53,55 +59,55 @@ model = Graph()
 
 model.add_input(name='input', input_shape=(img_channels, img_rows, img_cols))
 
-model_name='matching'
+model_name='matching_preproc'
 
-model.add_node(Convolution2D(64, 4, 4, border_mode='same',
+model.add_node(Convolution2D(64, 4, 4, border_mode='same', init='glorot_uniform',
                         input_shape=(img_channels, img_rows, img_cols)),
                name='conv1', input='input')
-model.add_node(Convolution2D(42, 1, 1),
+model.add_node(Convolution2D(42, 1, 1, init='glorot_uniform'),
                name='cccp1a', input='conv1')
 model.add_node(Activation('relu'),
                name='relu1a', input='cccp1a')
-model.add_node(Convolution2D(32, 1, 1),
+model.add_node(Convolution2D(32, 1, 1, init='glorot_uniform'),
                name='cccp1b', input='relu1a')
-model.add_node(MaxPooling2D(pool_size=(3, 3),strides=(2,2)),#FIXME: needs stride 2
+model.add_node(MaxPooling2D(pool_size=(3, 3),strides=(2,2)),
                name='pool1', input='cccp1b')
-model.add_node(Dropout(0.25), #FIXME: figure out correct dropout amount
+model.add_node(Dropout(0.5),
                name='drop1', input='pool1')
 model.add_node(Activation('relu'),
                name='relu1b', input='drop1')
 model.add_node(Convolution2D(42, 4, 4),
                name='conv2', input='relu1b')
-model.add_node(MaxPooling2D(pool_size=(3, 3),strides=(2,2)),#FIXME: needs stride 2
+model.add_node(MaxPooling2D(pool_size=(3, 3),strides=(2,2)),
                name='pool2', input='conv2')
-model.add_node(Dropout(0.25), #FIXME: figure out correct dropout amount
+model.add_node(Dropout(0.5),
                name='drop2', input='pool2')
 model.add_node(Activation('relu'),
                name='relu2', input='drop2')
-model.add_node(Convolution2D(64, 2, 2),
+model.add_node(Convolution2D(64, 2, 2, init='glorot_uniform'),
                name='conv3', input='relu2')
-model.add_node(MaxPooling2D(pool_size=(2, 2), strides=(2,2)),#FIXME: needs stride 2
+model.add_node(AveragePooling2D(pool_size=(2, 2), strides=(2,2)),
                name='pool3', input='conv3')
 model.add_node(Activation('relu'),
                name='relu3', input='pool3')
 model.add_node(Flatten(),
                name='flat', input='relu3')
 #inner product layer
-model.add_node(Dense(768),
+model.add_node(Dense(768, init='glorot_uniform'),
                name='ip1', input='flat')
 #sigmoid layer
 model.add_node(Activation('sigmoid'),
                name='sig1', input='ip1')
 
 #inner product c
-model.add_node(Dense(20),
+model.add_node(Dense(20, init='glorot_uniform'),
                name='ip_c', input='ip1')
 #accuracy c
 #loss c
 model.add_node(Activation('softmax'),
                name='soft_c', input='ip_c')
 #ip_f
-model.add_node(Dense(100),
+model.add_node(Dense(100, init='glorot_uniform'),
                name='ip_f', input='ip1')
 #accuracy_f
 #loss_f
@@ -113,20 +119,47 @@ model.add_output(name='output_fine', input='soft_f')
 model.add_output(name='output_coarse', input='soft_c')
 
 
-training = False # if the network should train, or just load the weights from elsewhere
-sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-model.compile(loss={'output_fine':'categorical_crossentropy','output_coarse':'categorical_crossentropy'}, optimizer=sgd)
+training = True # if the network should train, or just load the weights from elsewhere
+#sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+sgd = SGD(lr=0.0006, decay=0.001, momentum=0.0, nesterov=True)
+#model.compile(loss={'output_fine':'categorical_crossentropy','output_coarse':'categorical_crossentropy'}, optimizer=sgd)
+model.compile(loss={'output_fine':'mean_squared_error','output_coarse':'mean_squared_error'}, optimizer=sgd)
 if training:
-    history = model.fit({'input':X_train, 'output_fine':Y_train_fine, 'output_coarse':Y_train_coarse}, 
-                        batch_size=batch_size, nb_epoch=nb_epoch,
-                        validation_data={'input':X_test, 'output_fine':Y_test_fine, 'output_coarse':Y_test_coarse})
+    if not data_augmentation:
+        history = model.fit({'input':X_train, 'output_fine':Y_train_fine, 'output_coarse':Y_train_coarse}, 
+                            batch_size=batch_size, nb_epoch=nb_epoch,
+                            validation_data={'input':X_test, 'output_fine':Y_test_fine, 'output_coarse':Y_test_coarse})
+    else:
+        # this will do preprocessing and realtime data augmentation
+        datagen = ImageDataGenerator(
+            featurewise_center=False,  # set input mean to 0 over the dataset
+            samplewise_center=False,  # set each sample mean to 0
+            featurewise_std_normalization=False,  # divide inputs by std of the dataset
+            samplewise_std_normalization=False,  # divide each input by its std
+            zca_whitening=False,  # apply ZCA whitening
+            rotation_range=0,  # randomly rotate images in the range (degrees, 0 to 180)
+            width_shift_range=0.1,  # randomly shift images horizontally (fraction of total width)
+            height_shift_range=0.1,  # randomly shift images vertically (fraction of total height)
+            horizontal_flip=True,  # randomly flip images
+            vertical_flip=False)  # randomly flip images
 
-    model.save_weights('keras_cifar100_%s_weights.h5' % model_name)
+        # compute quantities required for featurewise normalization
+        # (std, mean, and principal components if ZCA whitening is applied)
+        datagen.fit(X_train)
+
+        # fit the model on the batches generated by datagen.flow()
+        history = model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
+                            samples_per_epoch=X_train.shape[0],
+                            nb_epoch=nb_epoch, show_accuracy=True,
+                            validation_data=(X_test, Y_test),
+                            nb_worker=1)
+
+    model.save_weights('net_output/keras_cifar100_%s_weights.h5' % model_name)
     json_string = model.to_json()
-    open('keras_cifar100_%s_architecture.json' % model_name, 'w').write(json_string)
-    pickle.dump(history, open('keras_cifar100_%s_history.p' % model_name,'w'))
+    open('net_output/keras_cifar100_%s_architecture.json' % model_name, 'w').write(json_string)
+    pickle.dump(history.history, open('net_output/keras_cifar100_%s_history.p' % model_name,'w'))
 else:
-    model.load_weights('keras_cifar100_matching_weights.h5')
+    model.load_weights('net_output/keras_cifar100_%s_weights.h5' % model_name)
     Y_predict_test = model.predict({'input':X_test}, batch_size=batch_size, verbose=1)
     Y_predict_train = model.predict({'input':X_train}, batch_size=batch_size, verbose=1)
     

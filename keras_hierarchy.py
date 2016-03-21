@@ -1,0 +1,160 @@
+'''Train a simple deep CNN on the CIFAR10 small images dataset.
+
+GPU run command:
+    THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 python cifar10_cnn.py
+
+It gets down to 0.65 test logloss in 25 epochs, and down to 0.55 after 50 epochs.
+(it's still underfitting at that point, though).
+
+Note: the data was pickled with Python 2, and some encoding issues might prevent you
+from loading it in Python 3. You might have to load it in Python 2,
+save it in a different format, load it in Python 3 and repickle it.
+'''
+
+# Concatenating the coarse and fine labels into one larger vector of 120 dimensions
+
+from __future__ import print_function
+import os
+os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=gpu1,floatX=float32"
+from keras.datasets import cifar10, cifar100
+from keras.preprocessing.image import ImageDataGenerator
+from keras.models import Sequential, Graph
+from keras.layers.core import Dense, Dropout, Activation, Flatten
+from keras.layers.convolutional import Convolution2D, MaxPooling2D
+from keras.optimizers import SGD
+from keras.utils import np_utils
+import cPickle as pickle
+import numpy as np
+
+batch_size = 32
+nb_classes_fine = 100
+nb_classes_coarse = 20
+nb_dim = 100
+nb_epoch = 200
+data_augmentation = False#True
+
+# input image dimensions
+img_rows, img_cols = 32, 32
+# the CIFAR10 images are RGB
+img_channels = 3
+
+# the data, shuffled and split between train and test sets
+(X_train, y_train_fine), (X_test, y_test_fine) = cifar100.load_data(label_mode='fine')
+(_, y_train_coarse), (_, y_test_coarse) = cifar100.load_data(label_mode='coarse')
+print('X_train shape:', X_train.shape)
+print(X_train.shape[0], 'train samples')
+print(X_test.shape[0], 'test samples')
+print('y_train_fine shape:', y_train_fine.shape)
+print('y_train_coarse shape:', y_train_coarse.shape)
+
+# convert class vectors to binary class matrices
+Y_train_fine = np_utils.to_categorical(y_train_fine, nb_classes_fine)
+Y_train_coarse = np_utils.to_categorical(y_train_coarse, nb_classes_coarse)
+Y_test_fine = np_utils.to_categorical(y_test_fine, nb_classes_fine)
+Y_test_coarse = np_utils.to_categorical(y_test_coarse, nb_classes_coarse)
+print('Y_train_fine shape:', Y_train_fine.shape)
+print('Y_train_coarse shape:', Y_train_coarse.shape)
+
+Y_train = np.concatenate((Y_train_coarse, Y_train_fine), axis=1)
+Y_test = np.concatenate((Y_test_coarse, Y_test_fine), axis=1)
+
+model = Graph()
+
+model.add_input(name='input', input_shape=(img_channels, img_rows, img_cols))
+
+model.add_node(Convolution2D(32, 3, 3, border_mode='same',
+                        input_shape=(img_channels, img_rows, img_cols)),
+               name='conv1', input='input')
+model.add_node(Activation('relu'),
+               name='relu1', input='conv1')
+model.add_node(Convolution2D(32, 3, 3),
+               name='conv2', input='relu1')
+model.add_node(Activation('relu'),
+               name='relu2', input='conv2')
+model.add_node(MaxPooling2D(pool_size=(2, 2)),
+               name='pool1', input='relu2')
+model.add_node(Dropout(0.25),
+               name='drop1', input='pool1')
+
+model.add_node(Convolution2D(64, 3, 3, border_mode='same'),
+               name='conv3', input='drop1')
+model.add_node(Activation('relu'),
+               name='relu3', input='conv3')
+model.add_node(Convolution2D(64, 3, 3),
+               name='conv4', input='relu3')
+model.add_node(Activation('relu'),
+               name='relu4', input='conv4')
+model.add_node(MaxPooling2D(pool_size=(2, 2)),
+               name='pool2', input='relu4')
+model.add_node(Dropout(0.25),
+               name='drop2', input='pool2')
+
+model.add_node(Flatten(),
+               name='flat1', input='drop2')
+model.add_node(Dense(512),
+               name='dense1', input='flat1')
+model.add_node(Activation('relu'),
+               name='relu5', input='dense1')
+model.add_node(Dropout(0.5),
+               name='drop3', input='relu5')
+
+#model.add_node(Dense(nb_classes_coarse + nb_classes_fine),
+#               name='dense2', input='drop3')
+model.add_node(Dense(nb_classes_coarse),
+               name='dense_c', input='drop3')
+model.add_node(Activation('softmax'),
+               name='soft_c', input='dense_c')
+
+model.add_node(Dense(nb_classes_fine),
+               name='dense_f', input='drop3')
+model.add_node(Activation('softmax'),
+               name='soft_f', input='dense_f')
+
+model.add_output(name='output', inputs=['soft_c', 'soft_f'], merge_mode='concat')
+
+# let's train the model using SGD + momentum (how original).
+#sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+#model.compile(loss='mean_squared_error', optimizer=sgd)
+model.compile(loss={'output':'mse'}, optimizer='rmsprop')
+
+X_train = X_train.astype('float32')
+X_test = X_test.astype('float32')
+X_train /= 255
+X_test /= 255
+
+if not data_augmentation:
+    print('Not using data augmentation.')
+    history = model.fit({'input':X_train, 'output':Y_train}, batch_size=batch_size,
+              nb_epoch=nb_epoch, #show_accuracy=True,
+              validation_data={'input':X_test, 'output':Y_test}, shuffle=True)
+else:
+    print('Using real-time data augmentation.')
+
+    # this will do preprocessing and realtime data augmentation
+    datagen = ImageDataGenerator(
+        featurewise_center=False,  # set input mean to 0 over the dataset
+        samplewise_center=False,  # set each sample mean to 0
+        featurewise_std_normalization=False,  # divide inputs by std of the dataset
+        samplewise_std_normalization=False,  # divide each input by its std
+        zca_whitening=False,  # apply ZCA whitening
+        rotation_range=0,  # randomly rotate images in the range (degrees, 0 to 180)
+        width_shift_range=0.1,  # randomly shift images horizontally (fraction of total width)
+        height_shift_range=0.1,  # randomly shift images vertically (fraction of total height)
+        horizontal_flip=True,  # randomly flip images
+        vertical_flip=False)  # randomly flip images
+
+    # compute quantities required for featurewise normalization
+    # (std, mean, and principal components if ZCA whitening is applied)
+    datagen.fit(X_train)
+
+    # fit the model on the batches generated by datagen.flow()
+    history = model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
+                        samples_per_epoch=X_train.shape[0],
+                        nb_epoch=nb_epoch, show_accuracy=True,
+                        validation_data=(X_test, Y_test),
+                        nb_worker=1)
+
+model.save_weights('net_output/keras_cifar100_hierarchy_weights.h5')
+json_string = model.to_json()
+open('net_output/keras_cifar100_hierarchy_architecture.json', 'w').write(json_string)
+pickle.dump(history.history, open('net_output/keras_cifar100_hierarchy_history.p' % label_mode,'w'))
