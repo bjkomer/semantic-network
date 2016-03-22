@@ -24,6 +24,11 @@ from keras.utils import np_utils
 import cPickle as pickle
 from network_utils import get_w2v_labels
 
+# Open an IPython session if an exception is found
+import sys
+from IPython.core import ultratb
+sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=1)
+
 batch_size = 32
 nb_classes = 100
 nb_dim = 200 #TODO: try lower numbers

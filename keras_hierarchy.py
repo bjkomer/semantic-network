@@ -26,6 +26,11 @@ from keras.utils import np_utils
 import cPickle as pickle
 import numpy as np
 
+# Open an IPython session if an exception is found
+import sys
+from IPython.core import ultratb
+sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=1)
+
 batch_size = 32
 nb_classes_fine = 100
 nb_classes_coarse = 20
@@ -157,4 +162,4 @@ else:
 model.save_weights('net_output/keras_cifar100_hierarchy_weights.h5')
 json_string = model.to_json()
 open('net_output/keras_cifar100_hierarchy_architecture.json', 'w').write(json_string)
-pickle.dump(history.history, open('net_output/keras_cifar100_hierarchy_history.p' % label_mode,'w'))
+pickle.dump(history.history, open('net_output/keras_cifar100_hierarchy_history.p','w'))
