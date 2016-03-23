@@ -14,6 +14,15 @@ save it in a different format, load it in Python 3 and repickle it.
 # Concatenating the coarse and fine labels into one larger vector of 120 dimensions
 
 from __future__ import print_function
+
+training = True # if the network should train, or just load the weights from elsewhere
+optimizer = 'rmsprop'
+model_style = 'original'
+nb_epoch = 50#200
+data_augmentation = False#True
+model_name = '%s_%s_d%s_e%s_a%s' % (model_style, optimizer, nb_dim, nb_epoch, data_augmentation)
+gpu = 'gpu1'
+
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=gpu1,floatX=float32"
 from keras.datasets import cifar10, cifar100
@@ -32,14 +41,10 @@ import sys
 from IPython.core import ultratb
 sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=1)
 
-model_name = 'hierarchy_sgd'
-training = False # if the network should train, or just load the weights from elsewhere
 batch_size = 32
 nb_classes_fine = 100
 nb_classes_coarse = 20
-nb_dim = 100
 nb_epoch = 200
-data_augmentation = False#True
 
 # input image dimensions
 img_rows, img_cols = 32, 32
@@ -70,60 +75,113 @@ model = Graph()
 
 model.add_input(name='input', input_shape=(img_channels, img_rows, img_cols))
 
-model.add_node(Convolution2D(32, 3, 3, border_mode='same',
-                        input_shape=(img_channels, img_rows, img_cols)),
-               name='conv1', input='input')
-model.add_node(Activation('relu'),
-               name='relu1', input='conv1')
-model.add_node(Convolution2D(32, 3, 3),
-               name='conv2', input='relu1')
-model.add_node(Activation('relu'),
-               name='relu2', input='conv2')
-model.add_node(MaxPooling2D(pool_size=(2, 2)),
-               name='pool1', input='relu2')
-model.add_node(Dropout(0.25),
-               name='drop1', input='pool1')
+if model_style == 'original':
 
-model.add_node(Convolution2D(64, 3, 3, border_mode='same'),
-               name='conv3', input='drop1')
-model.add_node(Activation('relu'),
-               name='relu3', input='conv3')
-model.add_node(Convolution2D(64, 3, 3),
-               name='conv4', input='relu3')
-model.add_node(Activation('relu'),
-               name='relu4', input='conv4')
-model.add_node(MaxPooling2D(pool_size=(2, 2)),
-               name='pool2', input='relu4')
-model.add_node(Dropout(0.25),
-               name='drop2', input='pool2')
+    model.add_node(Convolution2D(32, 3, 3, border_mode='same',
+                            input_shape=(img_channels, img_rows, img_cols)),
+                   name='conv1', input='input')
+    model.add_node(Activation('relu'),
+                   name='relu1', input='conv1')
+    model.add_node(Convolution2D(32, 3, 3),
+                   name='conv2', input='relu1')
+    model.add_node(Activation('relu'),
+                   name='relu2', input='conv2')
+    model.add_node(MaxPooling2D(pool_size=(2, 2)),
+                   name='pool1', input='relu2')
+    model.add_node(Dropout(0.25),
+                   name='drop1', input='pool1')
 
-model.add_node(Flatten(),
-               name='flat1', input='drop2')
-model.add_node(Dense(512),
-               name='dense1', input='flat1')
-model.add_node(Activation('relu'),
-               name='relu5', input='dense1')
-model.add_node(Dropout(0.5),
-               name='drop3', input='relu5')
+    model.add_node(Convolution2D(64, 3, 3, border_mode='same'),
+                   name='conv3', input='drop1')
+    model.add_node(Activation('relu'),
+                   name='relu3', input='conv3')
+    model.add_node(Convolution2D(64, 3, 3),
+                   name='conv4', input='relu3')
+    model.add_node(Activation('relu'),
+                   name='relu4', input='conv4')
+    model.add_node(MaxPooling2D(pool_size=(2, 2)),
+                   name='pool2', input='relu4')
+    model.add_node(Dropout(0.25),
+                   name='drop2', input='pool2')
 
-#model.add_node(Dense(nb_classes_coarse + nb_classes_fine),
-#               name='dense2', input='drop3')
-model.add_node(Dense(nb_classes_coarse),
-               name='dense_c', input='drop3')
-model.add_node(Activation('softmax'),
-               name='soft_c', input='dense_c')
+    model.add_node(Flatten(),
+                   name='flat1', input='drop2')
+    model.add_node(Dense(512),
+                   name='dense1', input='flat1')
+    model.add_node(Activation('relu'),
+                   name='relu5', input='dense1')
+    model.add_node(Dropout(0.5),
+                   name='drop3', input='relu5')
 
-model.add_node(Dense(nb_classes_fine),
-               name='dense_f', input='drop3')
-model.add_node(Activation('softmax'),
-               name='soft_f', input='dense_f')
+    #model.add_node(Dense(nb_classes_coarse + nb_classes_fine),
+    #               name='dense2', input='drop3')
+    model.add_node(Dense(nb_classes_coarse),
+                   name='dense_c', input='drop3')
+    model.add_node(Activation('softmax'),
+                   name='soft_c', input='dense_c')
+
+    model.add_node(Dense(nb_classes_fine),
+                   name='dense_f', input='drop3')
+    model.add_node(Activation('softmax'),
+                   name='soft_f', input='dense_f')
+elif model_style == 'wider':
+
+    model.add_node(Convolution2D(32, 3, 3, border_mode='same',
+                            input_shape=(img_channels, img_rows, img_cols)),
+                   name='conv1', input='input')
+    model.add_node(Activation('relu'),
+                   name='relu1', input='conv1')
+    model.add_node(Convolution2D(32, 3, 3),
+                   name='conv2', input='relu1')
+    model.add_node(Activation('relu'),
+                   name='relu2', input='conv2')
+    model.add_node(MaxPooling2D(pool_size=(2, 2)),
+                   name='pool1', input='relu2')
+    model.add_node(Dropout(0.25),
+                   name='drop1', input='pool1')
+
+    model.add_node(Convolution2D(64, 3, 3, border_mode='same'),
+                   name='conv3', input='drop1')
+    model.add_node(Activation('relu'),
+                   name='relu3', input='conv3')
+    model.add_node(Convolution2D(64, 3, 3),
+                   name='conv4', input='relu3')
+    model.add_node(Activation('relu'),
+                   name='relu4', input='conv4')
+    model.add_node(MaxPooling2D(pool_size=(2, 2)),
+                   name='pool2', input='relu4')
+    model.add_node(Dropout(0.25),
+                   name='drop2', input='pool2')
+
+    model.add_node(Flatten(),
+                   name='flat1', input='drop2')
+    model.add_node(Dense(512),
+                   name='dense1', input='flat1')
+    model.add_node(Activation('relu'),
+                   name='relu5', input='dense1')
+    model.add_node(Dropout(0.5),
+                   name='drop3', input='relu5')
+
+    #model.add_node(Dense(nb_classes_coarse + nb_classes_fine),
+    #               name='dense2', input='drop3')
+    model.add_node(Dense(nb_classes_coarse),
+                   name='dense_c', input='drop3')
+    model.add_node(Activation('softmax'),
+                   name='soft_c', input='dense_c')
+
+    model.add_node(Dense(nb_classes_fine),
+                   name='dense_f', input='drop3')
+    model.add_node(Activation('softmax'),
+                   name='soft_f', input='dense_f')
 
 model.add_output(name='output', inputs=['soft_c', 'soft_f'], merge_mode='concat')
 
-# let's train the model using SGD + momentum (how original).
-sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-model.compile(loss={'output':'mse'}, optimizer=sgd)
-#model.compile(loss={'output':'mse'}, optimizer='rmsprop')
+if optimizer = 'sgd':
+    # let's train the model using SGD + momentum (how original).
+    sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+    model.compile(loss={'output':'mse'}, optimizer=sgd)
+elif optimizer = 'rmsprop'
+    model.compile(loss={'output':'mse'}, optimizer='rmsprop')
 
 X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
@@ -163,13 +221,21 @@ if training:
                             validation_data=(X_test, Y_test),
                             nb_worker=1)
 
+    model.save_weights('net_output/hierarchy_%s_weights.h5' % model_name)
+    json_string = model.to_json()
+    open('net_output/hierarchy_%s_architecture.json' % model_name, 'w').write(json_string)
+    pickle.dump(history.history, open('net_output/hierarchy_%s_history.p' % model_name,'w'))
+    print("saving to: hierarchy_%s" % model_name)
+    """
     model.save_weights('net_output/keras_cifar100_%s_weights.h5' % model_name)
     json_string = model.to_json()
     open('net_output/keras_cifar100_%s_architecture.json' % model_name, 'w').write(json_string)
     pickle.dump(history.history, open('net_output/keras_cifar100_%s_history.p' % model_name,'w'))
     print("saving to: keras_cifar100_%s" % model_name)
+    """
 else:
-    model.load_weights('net_output/keras_cifar100_%s_weights.h5' % model_name)
+    #model.load_weights('net_output/keras_cifar100_%s_weights.h5' % model_name)
+    model.load_weights('net_output/hierarchy_%s_weights.h5' % model_name)
     Y_predict_test = model.predict({'input':X_test}, batch_size=batch_size, verbose=1)['output']
     Y_predict_train = model.predict({'input':X_train}, batch_size=batch_size, verbose=1)['output']
 

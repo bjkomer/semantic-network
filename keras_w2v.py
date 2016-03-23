@@ -11,9 +11,20 @@ from loading it in Python 3. You might have to load it in Python 2,
 save it in a different format, load it in Python 3 and repickle it.
 '''
 
+
 from __future__ import print_function
+
+training = True # if the network should train, or just load the weights from elsewhere
+optimizer = 'rmsprop'
+model_style = 'original'
+nb_dim = 200 #TODO: try lower numbers
+nb_epoch = 50#200
+data_augmentation = False#True
+model_name = '%s_%s_d%s_e%s_a%s' % (model_style, optimizer, nb_dim, nb_epoch, data_augmentation)
+gpu = 'gpu1'
+
 import os
-os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=gpu2,floatX=float32"
+os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
 from keras.datasets import cifar10, cifar100
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
@@ -23,18 +34,15 @@ from keras.optimizers import SGD
 from keras.utils import np_utils
 import cPickle as pickle
 from network_utils import get_w2v_labels, accuracy_w2v
+import numpy as np
 
 # Open an IPython session if an exception is found
 import sys
 from IPython.core import ultratb
 sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=1)
 
-training = False # if the network should train, or just load the weights from elsewhere
 batch_size = 32
 nb_classes = 100
-nb_dim = 200 #TODO: try lower numbers
-nb_epoch = 200
-data_augmentation = False#True
 
 # input image dimensions
 img_rows, img_cols = 32, 32
@@ -53,35 +61,96 @@ Y_test = get_w2v_labels(y_test, dim=nb_dim)
 print('y_train shape:', y_train.shape)
 print('y_train shape:', y_train.shape)
 
+print(model_name)
+
 model = Sequential()
 
-model.add(Convolution2D(32, 3, 3, border_mode='same',
-                        input_shape=(img_channels, img_rows, img_cols)))
-model.add(Activation('relu'))
-model.add(Convolution2D(32, 3, 3))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
+if model_style == 'original':
 
-model.add(Convolution2D(64, 3, 3, border_mode='same'))
-model.add(Activation('relu'))
-model.add(Convolution2D(64, 3, 3))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
+    model.add(Convolution2D(32, 3, 3, border_mode='same',
+                            input_shape=(img_channels, img_rows, img_cols)))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(32, 3, 3))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
 
-model.add(Flatten())
-model.add(Dense(512))
-model.add(Activation('relu'))
-model.add(Dropout(0.5))
-model.add(Dense(nb_dim))
-#model.add(Activation('softmax'))
-#TODO: might want a linear activation function here
+    model.add(Convolution2D(64, 3, 3, border_mode='same'))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(64, 3, 3))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
 
-# let's train the model using SGD + momentum (how original).
-sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-model.compile(loss='mean_squared_error', optimizer=sgd)
-#model.compile(loss='mean_squared_error', optimizer='rmsprop')
+    model.add(Flatten())
+    model.add(Dense(512))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(nb_dim))
+    #model.add(Activation('softmax'))
+    #TODO: might want a linear activation function here
+elif model_style == 'wider':
+
+    model.add(Convolution2D(48, 3, 3, border_mode='same',
+                            input_shape=(img_channels, img_rows, img_cols)))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(48, 5, 5))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Convolution2D(96, 3, 3, border_mode='same'))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(96, 3, 3))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Flatten())
+    model.add(Dense(1024))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(nb_dim))
+    #model.add(Activation('softmax'))
+    #TODO: might want a linear activation function here
+elif model_style == 'deeper':
+
+    model.add(Convolution2D(32, 3, 3, border_mode='same',
+                            input_shape=(img_channels, img_rows, img_cols)))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(32, 3, 3))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Convolution2D(64, 3, 3, border_mode='same'))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(64, 3, 3))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Convolution2D(96, 3, 3, border_mode='same'))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(96, 3, 3))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Flatten())
+    model.add(Dense(512))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(nb_dim))
+    #model.add(Activation('softmax'))
+    #TODO: might want a linear activation function here
+
+if optimizer == 'sgd':
+    # let's train the model using SGD + momentum (how original).
+    sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+    model.compile(loss='mean_squared_error', optimizer=sgd)
+elif optimizer == 'rmsprop':
+    model.compile(loss='mean_squared_error', optimizer='rmsprop')
 
 X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
@@ -120,15 +189,24 @@ if training:
                             nb_epoch=nb_epoch, show_accuracy=True,
                             validation_data=(X_test, Y_test),
                             nb_worker=1)
-
-    model.save_weights('net_output/keras_cifar100_w2v_sgd_dim_%s_weights.h5' % nb_dim)
+    
+    model.save_weights('net_output/w2v_%s_weights.h5' % model_name)
+    json_string = model.to_json()
+    open('net_output/w2v_%s_architecture.json' % model_name, 'w').write(json_string)
+    pickle.dump(history.history, open('net_output/w2v_%s_history.p' % model_name,'w'))
+    print("saving to: w2v_%s" % model_name)
+    """
+    model.save_weights('net_output/keras_cifar100_w2v_dim_%s_weights.h5' % nb_dim)
     json_string = model.to_json()
     open('net_output/keras_cifar100_w2v_sgd_dim_%s_architecture.json' % nb_dim, 'w').write(json_string)
     pickle.dump(history.history, open('net_output/keras_cifar100_w2v_sgd_dim_%s_history.p' % nb_dim,'w'))
     print("saving to: keras_cifar100_%s" % model_name)
+    """
 else:
     
-    model.load_weights('net_output/keras_cifar100_w2v_sgd_dim_%s_weights.h5' % nb_dim)
+    model.load_weights('net_output/w2v_%s_weights.h5' % model_name)
+    #model.load_weights('net_output/keras_cifar100_w2v_%s_weights.h5' % model_name)
+    #model.load_weights('net_output/keras_cifar100_w2v_sgd_dim_%s_weights.h5' % nb_dim)
     Y_predict_test = model.predict(X_test, batch_size=batch_size, verbose=1)
     Y_predict_train = model.predict(X_train, batch_size=batch_size, verbose=1)
     
@@ -141,7 +219,7 @@ else:
     sanity_accuracy, sanity_class = accuracy_w2v(Y_test, Y_test)
     print("w2v sanity test accuracy: %f" % sanity_accuracy)
 
-    print(test_class)
-    print(train_class)
-    print(sanity_class)
+    print(np.sum(test_class,axis=0))
+    print(np.sum(train_class,axis=0))
+    print(np.sum(sanity_class,axis=0))
     print(bug)
