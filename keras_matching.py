@@ -158,6 +158,7 @@ if training:
     json_string = model.to_json()
     open('net_output/keras_cifar100_%s_architecture.json' % model_name, 'w').write(json_string)
     pickle.dump(history.history, open('net_output/keras_cifar100_%s_history.p' % model_name,'w'))
+    print("saving to: keras_cifar100_%s" % model_name)
 else:
     model.load_weights('net_output/keras_cifar100_%s_weights.h5' % model_name)
     Y_predict_test = model.predict({'input':X_test}, batch_size=batch_size, verbose=1)
