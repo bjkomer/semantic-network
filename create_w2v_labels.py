@@ -46,7 +46,7 @@ fnametest = data_prefix + 'test.h5'
 fnametrain_label = data_prefix + 'train_w2v_label.h5'
 fnametest_label = data_prefix + 'test_w2v_label.h5'
 model = word2vec.load(root + 'word2vec/vectors.bin')
-
+"""
 # Training
 ftrain = h5py.File(fnametrain, 'r')
 ftrain_label = h5py.File(fnametrain_label, 'w')
@@ -68,3 +68,14 @@ for i, label in enumerate(ftest['label_fine']):
 
 ftest_label.create_dataset('label_w2v', data=test_label)
 ftest_label.close()
+"""
+# Ordered Label List
+fnamelist_label = data_prefix + 'ordered_w2v_labels_200dim.h5'
+flist_label = h5py.File(fnamelist_label, 'w')
+list_label = np.zeros((100, DIM))
+
+for i, c in enumerate(classes):
+    list_label[i,:] = model[c]
+
+flist_label.create_dataset('label_w2v', data=list_label)
+flist_label.close()
