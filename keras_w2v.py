@@ -15,13 +15,16 @@ save it in a different format, load it in Python 3 and repickle it.
 from __future__ import print_function
 
 training = True # if the network should train, or just load the weights from elsewhere
-optimizer = 'rmsprop'
+optimizer = 'sgd'#'rmsprop'
 model_style = 'original'
 nb_dim = 200 #TODO: try lower numbers
-nb_epoch = 50#200
+nb_epoch = 300
+learning_rate = 0.1
 data_augmentation = False#True
 model_name = '%s_%s_d%s_e%s_a%s' % (model_style, optimizer, nb_dim, nb_epoch, data_augmentation)
-gpu = 'gpu1'
+if optimizer == 'sgd':
+    model_name += '_lr%s' % learning_rate
+gpu = 'gpu0'
 
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
@@ -144,13 +147,39 @@ elif model_style == 'deeper':
     model.add(Dense(nb_dim))
     #model.add(Activation('softmax'))
     #TODO: might want a linear activation function here
+elif model_style == 'wider_activation':
+
+    model.add(Convolution2D(48, 3, 3, border_mode='same',
+                            input_shape=(img_channels, img_rows, img_cols)))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(48, 5, 5))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Convolution2D(96, 3, 3, border_mode='same'))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(96, 3, 3))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Flatten())
+    model.add(Dense(1024))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(nb_dim))
+    model.add(Activation('linear'))
+    #TODO: might want a linear activation function here
 
 if optimizer == 'sgd':
     # let's train the model using SGD + momentum (how original).
-    sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+    sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)
     model.compile(loss='mean_squared_error', optimizer=sgd)
 elif optimizer == 'rmsprop':
     model.compile(loss='mean_squared_error', optimizer='rmsprop')
+else:
+    model.compile(loss='mean_squared_error', optimizer=optimizer)
 
 X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
