@@ -17,11 +17,12 @@ from __future__ import print_function
 
 training = True # if the network should train, or just load the weights from elsewhere
 optimizer = 'sgd'#'rmsprop'
-model_style = 'moredense'#'original'
-nb_epoch = 200
+model_style = 'original'#'original'
+nb_epoch = 500
 learning_rate = 0.01
 data_augmentation = False#True
-model_name = '%s_%s_e%s_a%s' % (model_style, optimizer, nb_epoch, data_augmentation)
+objective = 'msle' #'mse' # objective function to use
+model_name = '%s_%s_%s_e%s_a%s' % (model_style, optimizer, objective, nb_epoch, data_augmentation)
 if optimizer == 'sgd':
     model_name += '_lr%s' % learning_rate
 gpu = 'gpu3'
@@ -126,6 +127,49 @@ if model_style == 'original':
 
     model.add_node(Dense(nb_classes_fine),
                    name='dense_f', input='drop3')
+    model.add_node(Activation('softmax'),
+                   name='soft_f', input='dense_f')
+if model_style == 'nodroporiginal':
+
+    model.add_node(Convolution2D(32, 3, 3, border_mode='same',
+                            input_shape=(img_channels, img_rows, img_cols)),
+                   name='conv1', input='input')
+    model.add_node(Activation('relu'),
+                   name='relu1', input='conv1')
+    model.add_node(Convolution2D(32, 3, 3),
+                   name='conv2', input='relu1')
+    model.add_node(Activation('relu'),
+                   name='relu2', input='conv2')
+    model.add_node(MaxPooling2D(pool_size=(2, 2)),
+                   name='pool1', input='relu2')
+
+    model.add_node(Convolution2D(64, 3, 3, border_mode='same'),
+                   name='conv3', input='pool1')
+    model.add_node(Activation('relu'),
+                   name='relu3', input='conv3')
+    model.add_node(Convolution2D(64, 3, 3),
+                   name='conv4', input='relu3')
+    model.add_node(Activation('relu'),
+                   name='relu4', input='conv4')
+    model.add_node(MaxPooling2D(pool_size=(2, 2)),
+                   name='pool2', input='relu4')
+
+    model.add_node(Flatten(),
+                   name='flat1', input='pool2')
+    model.add_node(Dense(512),
+                   name='dense1', input='flat1')
+    model.add_node(Activation('relu'),
+                   name='relu5', input='dense1')
+
+    #model.add_node(Dense(nb_classes_coarse + nb_classes_fine),
+    #               name='dense2', input='drop3')
+    model.add_node(Dense(nb_classes_coarse),
+                   name='dense_c', input='relu5')
+    model.add_node(Activation('softmax'),
+                   name='soft_c', input='dense_c')
+
+    model.add_node(Dense(nb_classes_fine),
+                   name='dense_f', input='relu5')
     model.add_node(Activation('softmax'),
                    name='soft_f', input='dense_f')
 elif model_style == 'moredense':
@@ -238,9 +282,9 @@ model.add_output(name='output', inputs=['soft_c', 'soft_f'], merge_mode='concat'
 if optimizer == 'sgd':
     # let's train the model using SGD + momentum (how original).
     sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(loss={'output':'mse'}, optimizer=sgd)
+    model.compile(loss={'output':objective}, optimizer=sgd)
 elif optimizer == 'rmsprop':
-    model.compile(loss={'output':'mse'}, optimizer='rmsprop')
+    model.compile(loss={'output':objective}, optimizer='rmsprop')
 
 X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
