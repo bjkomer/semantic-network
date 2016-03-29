@@ -16,16 +16,16 @@ save it in a different format, load it in Python 3 and repickle it.
 from __future__ import print_function
 
 training = True # if the network should train, or just load the weights from elsewhere
-optimizer = 'sgd'#'rmsprop'
-model_style = 'original'#'original'
-nb_epoch = 500
-learning_rate = 0.01
+optimizer = 'adam'#'rmsprop'
+model_style = 'original'#'wider'
+nb_epoch = 100
+learning_rate = 1.0#0.01
 data_augmentation = False#True
-objective = 'msle' #'mse' # objective function to use
+objective = 'mse' #'msle' # objective function to use
 model_name = '%s_%s_%s_e%s_a%s' % (model_style, optimizer, objective, nb_epoch, data_augmentation)
 if optimizer == 'sgd':
     model_name += '_lr%s' % learning_rate
-gpu = 'gpu3'
+gpu = 'gpu0'
 
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
@@ -285,6 +285,8 @@ if optimizer == 'sgd':
     model.compile(loss={'output':objective}, optimizer=sgd)
 elif optimizer == 'rmsprop':
     model.compile(loss={'output':objective}, optimizer='rmsprop')
+else:
+    model.compile(loss={'output':objective}, optimizer=optimizer)
 
 X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
