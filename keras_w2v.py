@@ -15,13 +15,17 @@ save it in a different format, load it in Python 3 and repickle it.
 from __future__ import print_function
 
 training = True # if the network should train, or just load the weights from elsewhere
-optimizer = 'sgd'#'rmsprop'
-model_style = 'original'
+optimizer = 'rmsprop'
+model_style = 'original'#'wider'#'nodrop_wider'#'original'#'wider'
 nb_dim = 200 #TODO: try lower numbers
-nb_epoch = 300
-learning_rate = 0.1
-data_augmentation = False#True
-model_name = '%s_%s_d%s_e%s_a%s' % (model_style, optimizer, nb_dim, nb_epoch, data_augmentation)
+nb_epoch = 200#1500
+learning_rate = 0.5#0.01
+objective='cosine_proximity'#'mse'#'mse'
+data_augmentation = True
+more_augmentation = True
+model_name = '%s_%s_%s_d%s_e%s_a%s' % (model_style, optimizer, objective, nb_dim, nb_epoch, data_augmentation)
+if more_augmentation:
+    model_name += '_moreaug'
 if optimizer == 'sgd':
     model_name += '_lr%s' % learning_rate
 gpu = 'gpu0'
@@ -171,15 +175,57 @@ elif model_style == 'wider_activation':
     model.add(Dense(nb_dim))
     model.add(Activation('linear'))
     #TODO: might want a linear activation function here
+if model_style == 'nodrop_original':
+
+    model.add(Convolution2D(32, 3, 3, border_mode='same',
+                            input_shape=(img_channels, img_rows, img_cols)))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(32, 3, 3))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+
+    model.add(Convolution2D(64, 3, 3, border_mode='same'))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(64, 3, 3))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+
+    model.add(Flatten())
+    model.add(Dense(512))
+    model.add(Activation('relu'))
+    model.add(Dense(nb_dim))
+    #model.add(Activation('softmax'))
+    #TODO: might want a linear activation function here
+elif model_style == 'nodrop_wider':
+
+    model.add(Convolution2D(48, 3, 3, border_mode='same',
+                            input_shape=(img_channels, img_rows, img_cols)))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(48, 5, 5))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+
+    model.add(Convolution2D(96, 3, 3, border_mode='same'))
+    model.add(Activation('relu'))
+    model.add(Convolution2D(96, 3, 3))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+
+    model.add(Flatten())
+    model.add(Dense(1024))
+    model.add(Activation('relu'))
+    model.add(Dense(nb_dim))
+    #model.add(Activation('softmax'))
+    #TODO: might want a linear activation function here
 
 if optimizer == 'sgd':
     # let's train the model using SGD + momentum (how original).
     sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(loss='mean_squared_error', optimizer=sgd)
+    model.compile(loss=objective, optimizer=sgd)
 elif optimizer == 'rmsprop':
-    model.compile(loss='mean_squared_error', optimizer='rmsprop')
+    model.compile(loss=objective, optimizer='rmsprop')
 else:
-    model.compile(loss='mean_squared_error', optimizer=optimizer)
+    model.compile(loss=objective, optimizer=optimizer)
 
 X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
@@ -194,19 +240,32 @@ if training:
                   validation_data=(X_test, Y_test), shuffle=True)
     else:
         print('Using real-time data augmentation.')
-
-        # this will do preprocessing and realtime data augmentation
-        datagen = ImageDataGenerator(
-            featurewise_center=False,  # set input mean to 0 over the dataset
-            samplewise_center=False,  # set each sample mean to 0
-            featurewise_std_normalization=False,  # divide inputs by std of the dataset
-            samplewise_std_normalization=False,  # divide each input by its std
-            zca_whitening=False,  # apply ZCA whitening
-            rotation_range=0,  # randomly rotate images in the range (degrees, 0 to 180)
-            width_shift_range=0.1,  # randomly shift images horizontally (fraction of total width)
-            height_shift_range=0.1,  # randomly shift images vertically (fraction of total height)
-            horizontal_flip=True,  # randomly flip images
-            vertical_flip=False)  # randomly flip images
+        if more_augmentation:
+            # this will do preprocessing and realtime data augmentation
+            datagen = ImageDataGenerator(
+                featurewise_center=True,  # set input mean to 0 over the dataset
+                samplewise_center=False,  # set each sample mean to 0
+                featurewise_std_normalization=True,  # divide inputs by std of the dataset
+                samplewise_std_normalization=False,  # divide each input by its std
+                zca_whitening=False,  # apply ZCA whitening
+                rotation_range=0,  # randomly rotate images in the range (degrees, 0 to 180)
+                width_shift_range=0.1,  # randomly shift images horizontally (fraction of total width)
+                height_shift_range=0.1,  # randomly shift images vertically (fraction of total height)
+                horizontal_flip=True,  # randomly flip images
+                vertical_flip=False)  # randomly flip images
+        else:
+            # this will do preprocessing and realtime data augmentation
+            datagen = ImageDataGenerator(
+                featurewise_center=False,  # set input mean to 0 over the dataset
+                samplewise_center=False,  # set each sample mean to 0
+                featurewise_std_normalization=False,  # divide inputs by std of the dataset
+                samplewise_std_normalization=False,  # divide each input by its std
+                zca_whitening=False,  # apply ZCA whitening
+                rotation_range=0,  # randomly rotate images in the range (degrees, 0 to 180)
+                width_shift_range=0.1,  # randomly shift images horizontally (fraction of total width)
+                height_shift_range=0.1,  # randomly shift images vertically (fraction of total height)
+                horizontal_flip=True,  # randomly flip images
+                vertical_flip=False)  # randomly flip images
 
         # compute quantities required for featurewise normalization
         # (std, mean, and principal components if ZCA whitening is applied)

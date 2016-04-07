@@ -2,7 +2,8 @@
 
 from __future__ import print_function
 
-gpu = 'gpu1'
+gpu = 'gpu0'
+nb_dim=200
 
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
@@ -15,7 +16,7 @@ from keras.optimizers import SGD
 from keras.utils import np_utils
 import cPickle as pickle
 import numpy as np
-from network_utils import accuracy, accuracy_hierarchy, clean_hierarchy_vec
+from network_utils import accuracy, accuracy_hierarchy, clean_hierarchy_vec, get_w2v_labels, accuracy_w2v
 
 # Open an IPython session if an exception is found
 import sys
@@ -67,3 +68,25 @@ if 'hierarchy' in model_name:
     print("hierarchy train accuracy: %f" % train_accuracy)
     print("hierarchy train coarse accuracy: %f" % train_acc_coarse)
     print("hierarchy train fine accuracy: %f" % train_acc_fine)
+elif 'w2v' in model_name:
+    # Load and format the data
+    (X_train, y_train), (X_test, y_test) = cifar100.load_data(label_mode='fine')
+    Y_train = get_w2v_labels(y_train, dim=nb_dim)
+    Y_test = get_w2v_labels(y_test, dim=nb_dim)
+
+    Y_predict_test = model.predict(X_test, batch_size=batch_size, verbose=1)
+    Y_predict_train = model.predict(X_train, batch_size=batch_size, verbose=1)
+
+    test_accuracy, test_class = accuracy_w2v(Y_predict_test, Y_test)
+
+    train_accuracy, train_class = accuracy_w2v(Y_predict_train, Y_train)
+
+    #sanity_accuracy, sanity_class = accuracy_w2v(Y_test, Y_test)
+
+    print(np.sum(test_class,axis=0))
+    print(np.sum(train_class,axis=0))
+    #print(np.sum(sanity_class,axis=0))
+
+    print("w2v test accuracy: %f" % test_accuracy)
+    print("w2v train accuracy: %f" % train_accuracy)
+    #print("w2v sanity test accuracy: %f" % sanity_accuracy)
