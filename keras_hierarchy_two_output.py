@@ -1,31 +1,18 @@
-'''Train a simple deep CNN on the CIFAR10 small images dataset.
-
-GPU run command:
-    THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 python cifar10_cnn.py
-
-It gets down to 0.65 test logloss in 25 epochs, and down to 0.55 after 50 epochs.
-(it's still underfitting at that point, though).
-
-Note: the data was pickled with Python 2, and some encoding issues might prevent you
-from loading it in Python 3. You might have to load it in Python 2,
-save it in a different format, load it in Python 3 and repickle it.
-'''
-
-# Concatenating the coarse and fine labels into one larger vector of 120 dimensions
+# Leaving the coarse and fine labels as separate for back propagation
 
 from __future__ import print_function
 
 training = True # if the network should train, or just load the weights from elsewhere
-optimizer = 'rmsprop'
-model_style = 'split'#'wider'
-nb_epoch = 300#500
+optimizer = 'sgd'#'rmsprop'
+model_style = 'original'#'split'#'wider'
+nb_epoch = 500#500
 learning_rate = 0.1#0.01
 data_augmentation = False#True
-objective = 'mse' # objective function to use
+objective = 'categorical_crossentropy'#'mse' # objective function to use
 model_name = '%s_%s_%s_e%s_a%s' % (model_style, optimizer, objective, nb_epoch, data_augmentation)
 if optimizer == 'sgd':
     model_name += '_lr%s' % learning_rate
-gpu = 'gpu3'
+gpu = 'gpu0'
 
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
@@ -458,16 +445,15 @@ elif model_style == 'nodrop_split': # have some convolutions for each of coarse 
     model.add_node(Activation('softmax'),
                    name='soft_f', input='dense_f')
 
-model.add_output(name='output', inputs=['soft_c', 'soft_f'], merge_mode='concat')
+model.add_output(name='output_fine', input='soft_f')
+model.add_output(name='output_coarse', input='soft_c')
 
 if optimizer == 'sgd':
     # let's train the model using SGD + momentum (how original).
     sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(loss={'output':objective}, optimizer=sgd)
-elif optimizer == 'rmsprop':
-    model.compile(loss={'output':objective}, optimizer='rmsprop')
+    model.compile(loss={'output_fine':objective,'output_coarse':objective}, optimizer=sgd)
 else:
-    model.compile(loss={'output':objective}, optimizer=optimizer)
+    model.compile(loss={'output_fine':objective,'output_coarse':objective}, optimizer=optimizer)
 
 X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
@@ -477,9 +463,9 @@ X_test /= 255
 if training:
     if not data_augmentation:
         print('Not using data augmentation.')
-        history = model.fit({'input':X_train, 'output':Y_train}, batch_size=batch_size,
+        history = model.fit({'input':X_train, 'output_fine':Y_train_fine,'output_coarse':Y_train_coarse}, batch_size=batch_size,
                   nb_epoch=nb_epoch, #show_accuracy=True,
-                  validation_data={'input':X_test, 'output':Y_test}, shuffle=True)
+                  validation_data={'input':X_test, 'output_fine':Y_test_fine,'output_coarse':Y_test_coarse}, shuffle=True)
     else:
         print('Using real-time data augmentation.')
 
@@ -507,34 +493,36 @@ if training:
                             validation_data=(X_test, Y_test),
                             nb_worker=1)
 
-    model.save_weights('net_output/hierarchy_%s_weights.h5' % model_name)
+    model.save_weights('net_output/2output_%s_weights.h5' % model_name)
     json_string = model.to_json()
-    open('net_output/hierarchy_%s_architecture.json' % model_name, 'w').write(json_string)
-    pickle.dump(history.history, open('net_output/hierarchy_%s_history.p' % model_name,'w'))
-    print("saving to: hierarchy_%s" % model_name)
-    """
-    model.save_weights('net_output/keras_cifar100_%s_weights.h5' % model_name)
-    json_string = model.to_json()
-    open('net_output/keras_cifar100_%s_architecture.json' % model_name, 'w').write(json_string)
-    pickle.dump(history.history, open('net_output/keras_cifar100_%s_history.p' % model_name,'w'))
-    print("saving to: keras_cifar100_%s" % model_name)
-    """
+    open('net_output/2output_%s_architecture.json' % model_name, 'w').write(json_string)
+    pickle.dump(history.history, open('net_output/2output_%s_history.p' % model_name,'w'))
+    print("saving to: 2output_%s" % model_name)
 else:
     #model.load_weights('net_output/keras_cifar100_%s_weights.h5' % model_name)
-    model.load_weights('net_output/hierarchy_%s_weights.h5' % model_name)
-    Y_predict_test = model.predict({'input':X_test}, batch_size=batch_size, verbose=1)['output']
-    Y_predict_train = model.predict({'input':X_train}, batch_size=batch_size, verbose=1)['output']
+    model.load_weights('net_output/2output_%s_weights.h5' % model_name)
+    Y_predict_test_dict = model.predict({'input':X_test}, batch_size=batch_size, verbose=1)
+    Y_predict_train_dict = model.predict({'input':X_train}, batch_size=batch_size, verbose=1)
+
+    Y_predict_test_fine = Y_predict_test_dict['output_fine']
+    Y_predict_test_coarse = Y_predict_test_dict['output_coarse']
+
+    Y_predict_train_fine = Y_predict_train_dict['output_fine']
+    Y_predict_train_coarse = Y_predict_train_dict['output_coarse']
+
+    Y_predict_test = np.concatenate((Y_predict_test_coarse, Y_predict_test_fine), axis=1)
+    Y_predict_train = np.concatenate((Y_predict_train_coarse, Y_predict_train_fine), axis=1)
 
     # Convert floating point vector to a clean binary vector with only two 1's
     Y_predict_test_clean = clean_hierarchy_vec(Y_predict_test)
     Y_predict_train_clean = clean_hierarchy_vec(Y_predict_train)
     
     test_accuracy, test_acc_coarse, test_acc_fine = accuracy_hierarchy(Y_predict_test_clean, Y_test)
-    print("hierarchy test accuracy: %f" % test_accuracy)
-    print("hierarchy test coarse accuracy: %f" % test_acc_coarse)
-    print("hierarchy test fine accuracy: %f" % test_acc_fine)
+    print("2output hierarchy test accuracy: %f" % test_accuracy)
+    print("2output hierarchy test coarse accuracy: %f" % test_acc_coarse)
+    print("2output hierarchy test fine accuracy: %f" % test_acc_fine)
     
     train_accuracy, train_acc_coarse, train_acc_fine = accuracy_hierarchy(Y_predict_train_clean, Y_train)
-    print("hierarchy train accuracy: %f" % train_accuracy)
-    print("hierarchy train coarse accuracy: %f" % train_acc_coarse)
-    print("hierarchy train fine accuracy: %f" % train_acc_fine)
+    print("2output hierarchy train accuracy: %f" % train_accuracy)
+    print("2output hierarchy train coarse accuracy: %f" % train_acc_coarse)
+    print("2output hierarchy train fine accuracy: %f" % train_acc_fine)

@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-gpu = 'gpu0'
+gpu = 'gpu1'
 
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
