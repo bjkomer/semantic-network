@@ -11,6 +11,9 @@ DIM = 200
 NUM_TRAIN = 50000
 NUM_TEST = 10000
 
+if len(sys.argv) == 2:
+    DIM = int(sys.argv[1])
+
 user = getpass.getuser()
 if user == 'ctnuser':
     root = '/home/ctnuser/bjkomer/'
@@ -45,7 +48,12 @@ fnametrain = data_prefix + 'train.h5'
 fnametest = data_prefix + 'test.h5'
 fnametrain_label = data_prefix + 'train_w2v_label.h5'
 fnametest_label = data_prefix + 'test_w2v_label.h5'
-model = word2vec.load(root + 'word2vec/vectors.bin')
+if DIM == 200:
+    model = word2vec.load(root + 'word2vec/vectors.bin')
+elif DIM in [100,50,25,10]:
+    model = word2vec.load(root + 'semantic-network/data/text8-%s.bin'%DIM)
+else:
+    raise NotImplemented
 """
 # Training
 ftrain = h5py.File(fnametrain, 'r')
@@ -70,7 +78,7 @@ ftest_label.create_dataset('label_w2v', data=test_label)
 ftest_label.close()
 """
 # Ordered Label List
-fnamelist_label = data_prefix + 'ordered_w2v_labels_200dim.h5'
+fnamelist_label = data_prefix + 'ordered_w2v_labels_%sdim.h5'%DIM
 flist_label = h5py.File(fnamelist_label, 'w')
 list_label = np.zeros((100, DIM))
 
