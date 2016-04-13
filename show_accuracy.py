@@ -68,7 +68,7 @@ if 'hierarchy' in model_name:
     print("hierarchy train accuracy: %f" % train_accuracy)
     print("hierarchy train coarse accuracy: %f" % train_acc_coarse)
     print("hierarchy train fine accuracy: %f" % train_acc_fine)
-elif '2output' in model_name:
+elif '2output' in model_name or 'keras_cifar100' in model_name:
     # Load and format data
     (X_train, y_train_fine), (X_test, y_test_fine) = cifar100.load_data(label_mode='fine')
     (_, y_train_coarse), (_, y_test_coarse) = cifar100.load_data(label_mode='coarse')
