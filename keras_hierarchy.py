@@ -15,6 +15,9 @@ save it in a different format, load it in Python 3 and repickle it.
 
 from __future__ import print_function
 
+pretrain = False # if the model should load pretrained weights
+pretrain_name = '2output_original_rmsprop_categorical_crossentropy_e7_aFalse'
+
 training = True # if the network should train, or just load the weights from elsewhere
 optimizer = 'rmsprop'
 model_style = 'split'#'wider'
@@ -25,6 +28,8 @@ objective = 'mse' # objective function to use
 model_name = '%s_%s_%s_e%s_a%s' % (model_style, optimizer, objective, nb_epoch, data_augmentation)
 if optimizer == 'sgd':
     model_name += '_lr%s' % learning_rate
+if pretrain:
+    model_name += '_pre'
 gpu = 'gpu3'
 
 import os
@@ -473,6 +478,9 @@ X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
 X_train /= 255
 X_test /= 255
+
+if pretrain:
+    model.load_weights('net_output/%s_weights.h5' % pretrain_name)
 
 if training:
     if not data_augmentation:

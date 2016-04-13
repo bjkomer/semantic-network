@@ -2,16 +2,21 @@
 
 from __future__ import print_function
 
+pretrain = True # if the model should load pretrained weights
+pretrain_name = 'hierarchy_split_rmsprop_mse_e300_aFalse'#'2output_original_rmsprop_categorical_crossentropy_e7_aFalse'
+
 training = True # if the network should train, or just load the weights from elsewhere
-optimizer = 'sgd'#'rmsprop'
-model_style = 'original'#'split'#'wider'
-nb_epoch = 500#500
-learning_rate = 0.1#0.01
+optimizer = 'rmsprop'
+model_style = 'split'#'original'#'nodroporiginal'#'original'#'split'#'wider'
+nb_epoch = 50#500#500
+learning_rate = 0.01#0.01
 data_augmentation = False#True
 objective = 'categorical_crossentropy'#'mse' # objective function to use
 model_name = '%s_%s_%s_e%s_a%s' % (model_style, optimizer, objective, nb_epoch, data_augmentation)
 if optimizer == 'sgd':
     model_name += '_lr%s' % learning_rate
+if pretrain:
+    model_name += '_pre'
 gpu = 'gpu0'
 
 import os
@@ -460,6 +465,9 @@ X_test = X_test.astype('float32')
 X_train /= 255
 X_test /= 255
 
+if pretrain:
+    model.load_weights('net_output/%s_weights.h5' % pretrain_name)
+
 if training:
     if not data_augmentation:
         print('Not using data augmentation.')
@@ -496,6 +504,8 @@ if training:
     model.save_weights('net_output/2output_%s_weights.h5' % model_name)
     json_string = model.to_json()
     open('net_output/2output_%s_architecture.json' % model_name, 'w').write(json_string)
+    if pretrain:
+        history.history['pretrain_name'] = pretrain_name
     pickle.dump(history.history, open('net_output/2output_%s_history.p' % model_name,'w'))
     print("saving to: 2output_%s" % model_name)
 else:

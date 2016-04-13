@@ -68,6 +68,45 @@ if 'hierarchy' in model_name:
     print("hierarchy train accuracy: %f" % train_accuracy)
     print("hierarchy train coarse accuracy: %f" % train_acc_coarse)
     print("hierarchy train fine accuracy: %f" % train_acc_fine)
+elif '2output' in model_name:
+    # Load and format data
+    (X_train, y_train_fine), (X_test, y_test_fine) = cifar100.load_data(label_mode='fine')
+    (_, y_train_coarse), (_, y_test_coarse) = cifar100.load_data(label_mode='coarse')
+    
+    Y_train_fine = np_utils.to_categorical(y_train_fine, nb_classes_fine)
+    Y_train_coarse = np_utils.to_categorical(y_train_coarse, nb_classes_coarse)
+    Y_test_fine = np_utils.to_categorical(y_test_fine, nb_classes_fine)
+    Y_test_coarse = np_utils.to_categorical(y_test_coarse, nb_classes_coarse)
+    
+    Y_train = np.concatenate((Y_train_coarse, Y_train_fine), axis=1)
+    Y_test = np.concatenate((Y_test_coarse, Y_test_fine), axis=1)
+
+    # Test the model
+    Y_predict_test_dict = model.predict({'input':X_test}, batch_size=batch_size, verbose=1)
+    Y_predict_train_dict = model.predict({'input':X_train}, batch_size=batch_size, verbose=1)
+
+    Y_predict_test_fine = Y_predict_test_dict['output_fine']
+    Y_predict_test_coarse = Y_predict_test_dict['output_coarse']
+
+    Y_predict_train_fine = Y_predict_train_dict['output_fine']
+    Y_predict_train_coarse = Y_predict_train_dict['output_coarse']
+
+    Y_predict_test = np.concatenate((Y_predict_test_coarse, Y_predict_test_fine), axis=1)
+    Y_predict_train = np.concatenate((Y_predict_train_coarse, Y_predict_train_fine), axis=1)
+
+    # Convert floating point vector to a clean binary vector with only two 1's
+    Y_predict_test_clean = clean_hierarchy_vec(Y_predict_test)
+    Y_predict_train_clean = clean_hierarchy_vec(Y_predict_train)
+    
+    test_accuracy, test_acc_coarse, test_acc_fine = accuracy_hierarchy(Y_predict_test_clean, Y_test)
+    print("2output hierarchy test accuracy: %f" % test_accuracy)
+    print("2output hierarchy test coarse accuracy: %f" % test_acc_coarse)
+    print("2output hierarchy test fine accuracy: %f" % test_acc_fine)
+    
+    train_accuracy, train_acc_coarse, train_acc_fine = accuracy_hierarchy(Y_predict_train_clean, Y_train)
+    print("2output hierarchy train accuracy: %f" % train_accuracy)
+    print("2output hierarchy train coarse accuracy: %f" % train_acc_coarse)
+    print("2output hierarchy train fine accuracy: %f" % train_acc_fine)
 elif 'w2v' in model_name:
     # Load and format the data
     (X_train, y_train), (X_test, y_test) = cifar100.load_data(label_mode='fine')
@@ -90,3 +129,5 @@ elif 'w2v' in model_name:
     print("w2v test accuracy: %f" % test_accuracy)
     print("w2v train accuracy: %f" % train_accuracy)
     #print("w2v sanity test accuracy: %f" % sanity_accuracy)
+else:
+    print("Unsure which accuracy measure to use based on file name")
