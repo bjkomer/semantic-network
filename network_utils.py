@@ -59,13 +59,17 @@ b = np.ascontiguousarray(test_w2v_label).view(np.dtype((np.void, test_w2v_label.
 _, idx = np.unique(b, return_index=True)
 all_vectors = test_w2v_label[idx]
 """
-fnamelist_label = data_prefix + 'ordered_w2v_labels_200dim.h5'
-flist_w2v = h5py.File(fnamelist_label, 'r')
-all_vectors = np.zeros((NUM_CLASSES, DIM))
-all_vectors = flist_w2v['label_w2v'][()]
+#fnamelist_label = data_prefix + 'ordered_w2v_labels_%sdim.h5'%DIM
+#flist_w2v = h5py.File(fnamelist_label, 'r')
+#all_vectors = np.zeros((NUM_CLASSES, DIM))
+#all_vectors = flist_w2v['label_w2v'][()]
 TOL = 0.0001
 
-def accuracy_w2v(prediction, actual):
+def accuracy_w2v(prediction, actual, dim):
+    fnamelist_label = data_prefix + 'ordered_w2v_labels_%sdim.h5'%dim
+    flist_w2v = h5py.File(fnamelist_label, 'r')
+    all_vectors = np.zeros((NUM_CLASSES, DIM))
+    all_vectors = flist_w2v['label_w2v'][()]
     num = len(actual)
     correct = 0.0
     pred_class = np.zeros((num, 100)) # which class number was being predicted
@@ -98,6 +102,8 @@ def get_w2v_labels(y_original, dim=200):
     y_new = np.zeros((y_original.shape[0], dim))
     if dim == 200:
         model = word2vec.load(root + 'word2vec/vectors.bin')
+    elif dim in [100,50,25,10]:
+        model = word2vec.load(root + 'semantic-network/data/text8-%s.bin'%dim)
     else:
         raise NotImplementedError
     for i, label in enumerate(y_original):
