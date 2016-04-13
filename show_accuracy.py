@@ -110,15 +110,21 @@ elif '2output' in model_name:
 elif 'w2v' in model_name:
     # Load and format the data
     (X_train, y_train), (X_test, y_test) = cifar100.load_data(label_mode='fine')
+    
+    # Figure out how many dimensions were used
+    for d in [200,100,50,25,10]:
+	if 'd%s'%d in model_name:
+	    nb_dim = d
+	    break
     Y_train = get_w2v_labels(y_train, dim=nb_dim)
     Y_test = get_w2v_labels(y_test, dim=nb_dim)
 
     Y_predict_test = model.predict(X_test, batch_size=batch_size, verbose=1)
     Y_predict_train = model.predict(X_train, batch_size=batch_size, verbose=1)
 
-    test_accuracy, test_class = accuracy_w2v(Y_predict_test, Y_test)
+    test_accuracy, test_class = accuracy_w2v(Y_predict_test, Y_test, dim=nb_dim)
 
-    train_accuracy, train_class = accuracy_w2v(Y_predict_train, Y_train)
+    train_accuracy, train_class = accuracy_w2v(Y_predict_train, Y_train, dim=nb_dim)
 
     #sanity_accuracy, sanity_class = accuracy_w2v(Y_test, Y_test)
 
