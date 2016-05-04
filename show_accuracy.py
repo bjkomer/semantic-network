@@ -16,7 +16,7 @@ from keras.optimizers import SGD
 from keras.utils import np_utils
 import cPickle as pickle
 import numpy as np
-from network_utils import accuracy, accuracy_hierarchy, clean_hierarchy_vec, get_w2v_labels, accuracy_w2v
+from network_utils import accuracy, accuracy_hierarchy, clean_hierarchy_vec, clean_vec, get_w2v_labels, accuracy_w2v
 
 # Open an IPython session if an exception is found
 import sys
@@ -135,5 +135,40 @@ elif 'w2v' in model_name:
     print("w2v test accuracy: %f" % test_accuracy)
     print("w2v train accuracy: %f" % train_accuracy)
     #print("w2v sanity test accuracy: %f" % sanity_accuracy)
+elif 'coarse' in model_name or 'fine' in model_name:
+    # Load and format data
+    (X_train, y_train_fine), (X_test, y_test_fine) = cifar100.load_data(label_mode='fine')
+    (_, y_train_coarse), (_, y_test_coarse) = cifar100.load_data(label_mode='coarse')
+    
+    Y_train_fine = np_utils.to_categorical(y_train_fine, nb_classes_fine)
+    Y_train_coarse = np_utils.to_categorical(y_train_coarse, nb_classes_coarse)
+    Y_test_fine = np_utils.to_categorical(y_test_fine, nb_classes_fine)
+    Y_test_coarse = np_utils.to_categorical(y_test_coarse, nb_classes_coarse)
+ 
+    if 'coarse' in model_name:
+        Y_train = Y_train_coarse
+        Y_test = Y_test_coarse
+    elif 'fine' in model_name:
+        Y_train = Y_train_fine
+        Y_test = Y_test_fine
+
+    # Test the model
+    Y_predict_test = model.predict({'input':X_test}, batch_size=batch_size, verbose=1)['output']
+    Y_predict_train = model.predict({'input':X_train}, batch_size=batch_size, verbose=1)['output']
+
+    # Convert floating point vector to a clean binary vector with only two 1's
+    Y_predict_test_clean = clean_vec(Y_predict_test)
+    Y_predict_train_clean = clean_vec(Y_predict_train)
+    
+    if 'coarse' in model_name:
+        label_type = 'coarse'
+    elif 'fine' in model_name:
+        label_type = 'fine'
+
+    test_accuracy = accuracy(Y_predict_test_clean, Y_test)
+    print(label_type + " test accuracy: %f" % test_accuracy)
+    
+    train_accuracy = accuracy(Y_predict_train_clean, Y_train)
+    print(label_type + " train accuracy: %f" % train_accuracy)
 else:
     print("Unsure which accuracy measure to use based on file name")

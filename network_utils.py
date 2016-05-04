@@ -123,6 +123,15 @@ def clean_hierarchy_vec(vectors):
         output[i,fi] = 1
     return output
 
+def clean_vec(vectors):
+    # works for either coarse or fine labels
+    num = len(vectors)
+    output = np.zeros((num, len(vectors[0])))
+    for i,v in enumerate(vectors):
+        li = np.argmax(v)
+        output[i,li] = 1
+    return output
+
 # Computes the accuracy of a prediction for hierarchical vectors
 def accuracy_hierarchy(prediction, actual):
     num = len(actual)
