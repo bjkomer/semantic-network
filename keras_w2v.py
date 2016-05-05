@@ -15,20 +15,20 @@ save it in a different format, load it in Python 3 and repickle it.
 from __future__ import print_function
 
 training = True # if the network should train, or just load the weights from elsewhere
-optimizer = 'rmsprop'
-model_style = 'original'#'wider'#'nodrop_wider'#'original'#'wider'
-nb_dim = 200 #TODO: try lower numbers
-nb_epoch = 200#1500
+optimizer = 'sgd'#'rmsprop'
+model_style = 'original'#'original'#'wider'#'nodrop_wider'#'original'#'wider'
+nb_dim = 25#200 #TODO: try lower numbers
+nb_epoch = 1000#200#1500
 learning_rate = 0.5#0.01
-objective='cosine_proximity'#'mse'#'mse'
+objective='mse'#'cosine_proximity'#'mse'#'mse'
 data_augmentation = True
-more_augmentation = True
+more_augmentation = False#True
 model_name = '%s_%s_%s_d%s_e%s_a%s' % (model_style, optimizer, objective, nb_dim, nb_epoch, data_augmentation)
 if more_augmentation:
     model_name += '_moreaug'
 if optimizer == 'sgd':
     model_name += '_lr%s' % learning_rate
-gpu = 'gpu0'
+gpu = 'gpu2'
 
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
