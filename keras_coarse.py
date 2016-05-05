@@ -129,13 +129,13 @@ if training:
                             validation_data=(X_test, Y_test_coarse),
                             nb_worker=1)
 
-    model.save_weights('cifar100_coarse_%s_weights.h5' % model_name)
+    model.save_weights('net_output/cifar100_coarse_%s_weights.h5' % model_name)
     json_string = model.to_json()
-    open('cifar100_coarse_%s_architecture.json' % model_name, 'w').write(json_string)
-    pickle.dump(history.history, open('cifar100_coarse_%s_history.p' % model_name,'w'))
+    open('net_output/cifar100_coarse_%s_architecture.json' % model_name, 'w').write(json_string)
+    pickle.dump(history.history, open('net_output/cifar100_coarse_%s_history.p' % model_name,'w'))
     print("saving to: cifar100_coarse_%s" % model_name)
 elif load_matching:
-    load_custom_weights(model, 'keras_cifar100_matching_weights.h5')
+    load_custom_weights(model, 'net_output/keras_cifar100_matching_weights.h5')
     Y_predict_test = model.predict(X_test, batch_size=batch_size, verbose=1)
     Y_predict_train = model.predict(X_train, batch_size=batch_size, verbose=1)
     
