@@ -151,11 +151,11 @@ elif 'coarse' in model_name or 'fine' in model_name:
     elif 'fine' in model_name:
         Y_train = Y_train_fine
         Y_test = Y_test_fine
-
+    print(X_test)
     # Test the model
-    Y_predict_test = model.predict({'input':X_test}, batch_size=batch_size, verbose=1)['output']
-    Y_predict_train = model.predict({'input':X_train}, batch_size=batch_size, verbose=1)['output']
-
+    Y_predict_test = model.predict(X_test, batch_size=batch_size, verbose=1)
+    Y_predict_train = model.predict(X_train, batch_size=batch_size, verbose=1)
+    #print(Y_predict_train)
     # Convert floating point vector to a clean binary vector with only two 1's
     Y_predict_test_clean = clean_vec(Y_predict_test)
     Y_predict_train_clean = clean_vec(Y_predict_train)

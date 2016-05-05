@@ -1,4 +1,5 @@
 *.swp
+*.pyc
 
 # Don't track anything in the data folder
 data
