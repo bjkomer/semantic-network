@@ -3,11 +3,18 @@
 # Only using the fine labels, so accuracy can be reported
 from __future__ import print_function
 
-gpu = 'gpu2'
-
-optimizer = 'rmsprop'
+optimizer = 'sgd'#'rmsprop'
+model_style = 'original'#'original'#'wider'#'nodrop_wider'#'original'#'wider'
+nb_epoch = 200#1500
+learning_rate = 0.5#0.01
 data_augmentation = True
-model_name='matching_' + optimizer + '_' + str(data_augmentation)
+more_augmentation = False#True
+model_name = '%s_%s_e%s_a%s' % (model_style, optimizer, nb_epoch, data_augmentation)
+if more_augmentation:
+    model_name += '_moreaug'
+if optimizer == 'sgd':
+    model_name += '_lr%s' % learning_rate
+gpu = 'gpu2'
 
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
@@ -58,7 +65,7 @@ print('Y_train_coarse shape:', Y_train_coarse.shape)
 # Beginning of Model #
 ######################
 model = Sequential()
-
+"""
 model.add(Convolution2D(64, 4, 4, border_mode='same',
                         input_shape=(img_channels, img_rows, img_cols)))
 model.add(Convolution2D(42, 1, 1))
@@ -84,6 +91,29 @@ model.add(Activation('sigmoid'))
 model.add(Dense(100))
 #accuracy_f
 #loss_f
+model.add(Activation('softmax'))
+"""
+
+model.add(Convolution2D(32, 3, 3, border_mode='same',
+			input_shape=(img_channels, img_rows, img_cols)))
+model.add(Activation('relu'))
+model.add(Convolution2D(32, 3, 3))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(0.25))
+
+model.add(Convolution2D(64, 3, 3, border_mode='same'))
+model.add(Activation('relu'))
+model.add(Convolution2D(64, 3, 3))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(0.25))
+
+model.add(Flatten())
+model.add(Dense(512))
+model.add(Activation('relu'))
+model.add(Dropout(0.5))
+model.add(Dense(20))
 model.add(Activation('softmax'))
 
 training = True # if the network should train, or just load the weights from elsewhere
