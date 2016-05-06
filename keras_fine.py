@@ -5,8 +5,8 @@ from __future__ import print_function
 
 optimizer = 'sgd'#'rmsprop'
 model_style = 'original'#'original'#'wider'#'nodrop_wider'#'original'#'wider'
-nb_epoch = 200#1500
-learning_rate = 0.5#0.01
+nb_epoch = 5#1500
+learning_rate = 0.01#0.01
 data_augmentation = True
 more_augmentation = False#True
 model_name = '%s_%s_e%s_a%s' % (model_style, optimizer, nb_epoch, data_augmentation)
@@ -14,7 +14,7 @@ if more_augmentation:
     model_name += '_moreaug'
 if optimizer == 'sgd':
     model_name += '_lr%s' % learning_rate
-gpu = 'gpu2'
+gpu = 'gpu1'
 
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
@@ -36,8 +36,6 @@ sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_
 batch_size = 32
 nb_classes_fine = 100
 nb_classes_coarse = 20
-nb_epoch = 200
-data_augmentation = True
 
 # input image dimensions
 img_rows, img_cols = 32, 32
@@ -60,6 +58,11 @@ Y_test_fine = np_utils.to_categorical(y_test_fine, nb_classes_fine)
 Y_test_coarse = np_utils.to_categorical(y_test_coarse, nb_classes_coarse)
 print('Y_train_fine shape:', Y_train_fine.shape)
 print('Y_train_coarse shape:', Y_train_coarse.shape)
+
+X_train = X_train.astype('float32')
+X_test = X_test.astype('float32')
+X_train /= 255
+X_test /= 255
 
 ######################
 # Beginning of Model #
@@ -100,20 +103,20 @@ model.add(Activation('relu'))
 model.add(Convolution2D(32, 3, 3))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
+#model.add(Dropout(0.25))
 
 model.add(Convolution2D(64, 3, 3, border_mode='same'))
 model.add(Activation('relu'))
 model.add(Convolution2D(64, 3, 3))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
+#model.add(Dropout(0.25))
 
 model.add(Flatten())
 model.add(Dense(512))
 model.add(Activation('relu'))
-model.add(Dropout(0.5))
-model.add(Dense(20))
+#model.add(Dropout(0.5))
+model.add(Dense(100))
 model.add(Activation('softmax'))
 
 training = True # if the network should train, or just load the weights from elsewhere
@@ -122,9 +125,9 @@ load_matching = False # if the network should load the weights from the model tr
 if optimizer == 'sgd':
     # let's train the model using SGD + momentum (how original).
     sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(loss='categorical_crossentropy', optimizer=sgd)
+    model.compile(loss='categorical_crossentropy', metrics=['accuracy'], optimizer=sgd)
 else:
-    model.compile(loss='categorical_crossentropy', optimizer=optimizer)
+    model.compile(loss='categorical_crossentropy', metrics=['accuracy'], optimizer=optimizer)
 
 if training:
     if not data_augmentation:

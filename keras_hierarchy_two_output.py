@@ -2,13 +2,13 @@
 
 from __future__ import print_function
 
-pretrain = True # if the model should load pretrained weights
+pretrain = False#True # if the model should load pretrained weights
 pretrain_name = 'hierarchy_split_rmsprop_mse_e300_aFalse'#'2output_original_rmsprop_categorical_crossentropy_e7_aFalse'
 
 training = True # if the network should train, or just load the weights from elsewhere
 optimizer = 'rmsprop'
 model_style = 'split'#'original'#'nodroporiginal'#'original'#'split'#'wider'
-nb_epoch = 50#500#500
+nb_epoch = 10#50#500#500
 learning_rate = 0.01#0.01
 data_augmentation = False#True
 objective = 'categorical_crossentropy'#'mse' # objective function to use
@@ -17,7 +17,7 @@ if optimizer == 'sgd':
     model_name += '_lr%s' % learning_rate
 if pretrain:
     model_name += '_pre'
-gpu = 'gpu0'
+gpu = 'gpu1'
 
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
@@ -62,6 +62,11 @@ Y_test_fine = np_utils.to_categorical(y_test_fine, nb_classes_fine)
 Y_test_coarse = np_utils.to_categorical(y_test_coarse, nb_classes_coarse)
 print('Y_train_fine shape:', Y_train_fine.shape)
 print('Y_train_coarse shape:', Y_train_coarse.shape)
+
+X_train = X_train.astype('float32')
+X_test = X_test.astype('float32')
+X_train /= 255
+X_test /= 255
 
 print(model_name)
 

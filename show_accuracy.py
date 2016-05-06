@@ -42,6 +42,11 @@ if 'hierarchy' in model_name:
     # Load and format data
     (X_train, y_train_fine), (X_test, y_test_fine) = cifar100.load_data(label_mode='fine')
     (_, y_train_coarse), (_, y_test_coarse) = cifar100.load_data(label_mode='coarse')
+
+    X_train = X_train.astype('float32')
+    X_test = X_test.astype('float32')
+    X_train /= 255
+    X_test /= 255
     
     Y_train_fine = np_utils.to_categorical(y_train_fine, nb_classes_fine)
     Y_train_coarse = np_utils.to_categorical(y_train_coarse, nb_classes_coarse)
@@ -72,6 +77,11 @@ elif '2output' in model_name or 'keras_cifar100' in model_name:
     # Load and format data
     (X_train, y_train_fine), (X_test, y_test_fine) = cifar100.load_data(label_mode='fine')
     (_, y_train_coarse), (_, y_test_coarse) = cifar100.load_data(label_mode='coarse')
+
+    X_train = X_train.astype('float32')
+    X_test = X_test.astype('float32')
+    X_train /= 255
+    X_test /= 255
     
     Y_train_fine = np_utils.to_categorical(y_train_fine, nb_classes_fine)
     Y_train_coarse = np_utils.to_categorical(y_train_coarse, nb_classes_coarse)
@@ -110,6 +120,11 @@ elif '2output' in model_name or 'keras_cifar100' in model_name:
 elif 'w2v' in model_name:
     # Load and format the data
     (X_train, y_train), (X_test, y_test) = cifar100.load_data(label_mode='fine')
+
+    X_train = X_train.astype('float32')
+    X_test = X_test.astype('float32')
+    X_train /= 255
+    X_test /= 255
     
     # Figure out how many dimensions were used
     for d in [200,100,50,25,10]:
@@ -139,6 +154,11 @@ elif 'coarse' in model_name or 'fine' in model_name:
     # Load and format data
     (X_train, y_train_fine), (X_test, y_test_fine) = cifar100.load_data(label_mode='fine')
     (_, y_train_coarse), (_, y_test_coarse) = cifar100.load_data(label_mode='coarse')
+
+    X_train = X_train.astype('float32')
+    X_test = X_test.astype('float32')
+    X_train /= 255
+    X_test /= 255
     
     Y_train_fine = np_utils.to_categorical(y_train_fine, nb_classes_fine)
     Y_train_coarse = np_utils.to_categorical(y_train_coarse, nb_classes_coarse)

@@ -1,5 +1,5 @@
 from __future__ import print_function
-gpu = 'gpu0'
+gpu = 'gpu1'
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
 from hyperopt import Trials, STATUS_OK, tpe
@@ -19,8 +19,8 @@ def data():
     (X_train, y_train_fine), (X_test, y_test_fine) = cifar100.load_data(label_mode='fine')
     (_, y_train_coarse), (_, y_test_coarse) = cifar100.load_data(label_mode='coarse')
     
-    Y_train = np_utils.to_categorical(y_train_fine, nb_classes_fine)
-    Y_test = np_utils.to_categorical(y_test_fine, nb_classes_fine)
+    Y_train = np_utils.to_categorical(y_train_coarse, nb_classes_coarse)
+    Y_test = np_utils.to_categorical(y_test_coarse, nb_classes_coarse)
     
     X_train = X_train.astype('float32')
     X_test = X_test.astype('float32')
@@ -38,7 +38,7 @@ def data():
     """
 def model(X_train, Y_train, X_test, Y_test):
 
-    nb_dim = 100
+    nb_dim = 20
     img_rows, img_cols = 32, 32
     img_channels = 3
 
