@@ -8,7 +8,7 @@ pretrain_name = 'hierarchy_split_rmsprop_mse_e300_aFalse'#'2output_original_rmsp
 training = True # if the network should train, or just load the weights from elsewhere
 optimizer = 'rmsprop'
 model_style = 'split'#'original'#'nodroporiginal'#'original'#'split'#'wider'
-nb_epoch = 10#50#500#500
+nb_epoch = 200#50#500#500
 learning_rate = 0.01#0.01
 data_augmentation = False#True
 objective = 'categorical_crossentropy'#'mse' # objective function to use
@@ -17,7 +17,7 @@ if optimizer == 'sgd':
     model_name += '_lr%s' % learning_rate
 if pretrain:
     model_name += '_pre'
-gpu = 'gpu1'
+gpu = 'gpu3'
 
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
@@ -461,14 +461,9 @@ model.add_output(name='output_coarse', input='soft_c')
 if optimizer == 'sgd':
     # let's train the model using SGD + momentum (how original).
     sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(loss={'output_fine':objective,'output_coarse':objective}, optimizer=sgd)
+    model.compile(loss={'output_fine':objective,'output_coarse':objective}, optimizer=sgd, metrics=['accuracy'])
 else:
-    model.compile(loss={'output_fine':objective,'output_coarse':objective}, optimizer=optimizer)
-
-X_train = X_train.astype('float32')
-X_test = X_test.astype('float32')
-X_train /= 255
-X_test /= 255
+    model.compile(loss={'output_fine':objective,'output_coarse':objective}, optimizer=optimizer, metrics=['accuracy'])
 
 if pretrain:
     model.load_weights('net_output/%s_weights.h5' % pretrain_name)

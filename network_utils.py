@@ -118,7 +118,7 @@ def clean_hierarchy_vec(vectors):
     output = np.zeros((num, 120))
     for i,v in enumerate(vectors):
         ci = np.argmax(v[:20])
-        fi = np.argmax(v[20:])
+        fi = np.argmax(v[20:])+20
         output[i,ci] = 1
         output[i,fi] = 1
     return output
