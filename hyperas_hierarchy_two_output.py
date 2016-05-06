@@ -475,4 +475,4 @@ if __name__ == '__main__':
     print("Evaluation of best performing model:")
     print(best_model.evaluate(X_test, Y_test))
     
-    pickle.dump(trials, open('net_output/trials_coarse_epoch%s_evals%s.p'%(nb_epoch, nb_evals)))
+    pickle.dump(trials, open('net_output/trials_hier2output_epoch%s_evals%s.p'%(nb_epoch, nb_evals)))
