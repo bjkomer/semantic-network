@@ -68,6 +68,11 @@ Y_test = get_w2v_labels(y_test, dim=nb_dim)
 print('y_train shape:', y_train.shape)
 print('y_train shape:', y_train.shape)
 
+X_train = X_train.astype('float32')
+X_test = X_test.astype('float32')
+X_train /= 255
+X_test /= 255
+
 print(model_name)
 
 model = Sequential()
