@@ -18,8 +18,8 @@ import sys
 from IPython.core import ultratb
 sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=1)
 
-nb_epoch = 1 #NOTE: need to modify this elsewhere as well
-nb_evals = 5
+nb_epoch = 30 #NOTE: need to modify this elsewhere as well
+nb_evals = 100
 
 def data():
 
@@ -455,13 +455,16 @@ def model(X_train, Y_train_fine, Y_train_coarse, X_test, Y_test_fine, Y_test_coa
     model.compile(loss={'output_fine':objective,'output_coarse':objective}, optimizer=optimizer, metrics=['accuracy'])
 
     history = model.fit({'input':X_train, 'output_fine':Y_train_fine,'output_coarse':Y_train_coarse}, batch_size=batch_size,
-              nb_epoch=1, verbose=2,#show_accuracy=True,
+              nb_epoch=30, verbose=2,#show_accuracy=True,
               validation_data={'input':X_test, 'output_fine':Y_test_fine,'output_coarse':Y_test_coarse}, shuffle=True)
 
-    score, acc = model.evaluate(X_test, Y_test, verbose=0)
-    print('Test accuracy:', acc)
+    #score, acc = model.evaluate({'input':X_train, 'output_fine':Y_train_fine,'output_coarse':Y_train_coarse}, verbose=0)
+    loss, fine_loss, coarse_loss, fine_acc, coarse_acc = model.evaluate({'input':X_train, 'output_fine':Y_train_fine,'output_coarse':Y_train_coarse}, verbose=0)
+    print('Test fine accuracy:', fine_acc)
+    print('Test coarse accuracy:', coarse_acc)
+    print('Combined loss', fine_loss + coarse_loss)
     #return {'loss': -acc, 'status': STATUS_OK, 'model':model}
-    return {'loss': -acc, 'status': STATUS_OK, 'params':params}
+    return {'loss': fine_loss + coarse_loss, 'status': STATUS_OK, 'params':params, 'fine_acc':fine_acc, 'coarse_acc':coarse_acc}
 
 if __name__ == '__main__':
     trials = Trials()
@@ -471,8 +474,9 @@ if __name__ == '__main__':
                                           max_evals=nb_evals,
                                           trials=trials)
 
-    X_train, Y_train, X_test, Y_test = data()
-    print("Evaluation of best performing model:")
-    print(best_model.evaluate(X_test, Y_test))
+    X_train, Y_train_fine, Y_train_coarse, X_test, Y_test_fine, Y_test_coarse = data()
+    #print("Evaluation of best performing model:")
+    #print(best_model.evaluate(X_test, Y_test))
     
-    pickle.dump(trials, open('net_output/trials_hier2output_epoch%s_evals%s.p'%(nb_epoch, nb_evals)))
+    print("saving results to: net_output/trials_hier2output_epoch%s_evals%s.p"%(nb_epoch, nb_evals))
+    pickle.dump(trials, open('net_output/trials_hier2output_epoch%s_evals%s.p'%(nb_epoch, nb_evals),'w'))

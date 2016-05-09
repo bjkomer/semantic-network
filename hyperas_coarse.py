@@ -1,5 +1,5 @@
 from __future__ import print_function
-gpu = 'gpu1'
+gpu = 'gpu2'
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
 from hyperopt import Trials, STATUS_OK, tpe
@@ -18,8 +18,8 @@ import sys
 from IPython.core import ultratb
 sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=1)
 
-nb_epoch = 10 #NOTE: need to modify this elsewhere as well
-nb_evals = 50
+nb_epoch = 30#10 #NOTE: need to modify this elsewhere as well
+nb_evals = 100#50
 
 def data():
 
@@ -93,7 +93,7 @@ def model(X_train, Y_train, X_test, Y_test):
 
     model.fit(X_train, Y_train,
              batch_size=batch_size,
-             nb_epoch=10,
+             nb_epoch=30,
              show_accuracy=True,
              verbose=2,
              validation_data=(X_test, Y_test))
@@ -112,7 +112,7 @@ if __name__ == '__main__':
                                           trials=trials)
 
     X_train, Y_train, X_test, Y_test = data()
-    print("Evaluation of best performing model:")
-    print(best_model.evaluate(X_test, Y_test))
+    #print("Evaluation of best performing model:")
+    #print(best_model.evaluate(X_test, Y_test))
     
-    pickle.dump(trials, open('net_output/trials_coarse_epoch%s_evals%s.p'%(nb_epoch, nb_evals)))
+    pickle.dump(trials, open('net_output/trials_coarse_epoch%s_evals%s.p'%(nb_epoch, nb_evals),'w'))
