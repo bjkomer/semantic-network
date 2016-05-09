@@ -134,6 +134,12 @@ elif 'w2v' in model_name:
     Y_train = get_w2v_labels(y_train, dim=nb_dim)
     Y_test = get_w2v_labels(y_test, dim=nb_dim)
 
+    #NOTE: due to changes in keras, model has to be compiled before being used here
+    #TODO: do the parameters that it is compiled with matter? might need to get them exactly
+    optimizers = ['sgd','rmsprop','adam']
+    losses = ['mse','msle']
+    model.compile(optimizer=optimizers[1],loss=losses[0])
+
     Y_predict_test = model.predict(X_test, batch_size=batch_size, verbose=1)
     Y_predict_train = model.predict(X_train, batch_size=batch_size, verbose=1)
 
