@@ -46,20 +46,21 @@ classes = ['beaver', 'dolphin', 'otter', 'seal', 'whale',
            'cutter', 'rocket', 'streetcar', 'tank', 'tractor'
           ]
 
-#model = word2vec.load('/home/bjkomer/semantic-network/data/word2vec/GoogleNews-vectors-negative300.bin',
-#                      encoding='ISO-8859-1'
-#                     )
-model = word2vec.load('/home/bjkomer/word2vec/vectors.bin')
-#model = word2vec.load('/home/bjkomer/semantic-network/data/text8.bin')
+if __name__ == '__main__':
+    #model = word2vec.load('/home/bjkomer/semantic-network/data/word2vec/GoogleNews-vectors-negative300.bin',
+    #                      encoding='ISO-8859-1'
+    #                     )
+    model = word2vec.load('/home/bjkomer/word2vec/vectors.bin')
+    #model = word2vec.load('/home/bjkomer/semantic-network/data/text8.bin')
 
-for c in classes:
-    print(c)
-    print(model[c][:5])
-    print(model[c].shape)
-"""
-print(model)
-print(dir(model))
+    for c in classes:
+        print(c)
+        print(model[c][:5])
+        print(model[c].shape)
+    """
+    print(model)
+    print(dir(model))
 
-print(model['cat'][:10])
-print(model['cat'].shape)
-"""
+    print(model['cat'][:10])
+    print(model['cat'].shape)
+    """

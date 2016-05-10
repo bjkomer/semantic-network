@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-gpu = 'gpu0'
+gpu = 'gpu1'
 nb_dim=200
 
 import os
@@ -16,7 +16,7 @@ from keras.optimizers import SGD
 from keras.utils import np_utils
 import cPickle as pickle
 import numpy as np
-from network_utils import accuracy, accuracy_hierarchy, clean_hierarchy_vec, clean_vec, get_w2v_labels, accuracy_w2v
+from network_utils import accuracy, accuracy_hierarchy, clean_hierarchy_vec, clean_vec, get_w2v_labels, accuracy_w2v, classes
 
 # Open an IPython session if an exception is found
 import sys
@@ -150,7 +150,11 @@ elif 'w2v' in model_name:
     #sanity_accuracy, sanity_class = accuracy_w2v(Y_test, Y_test)
 
     print(np.sum(test_class,axis=0))
+    print(np.argmax(np.sum(test_class,axis=0)))
+    print(classes[np.argmax(np.sum(test_class,axis=0))])
     print(np.sum(train_class,axis=0))
+    print(np.argmax(np.sum(train_class,axis=0)))
+    print(classes[np.argmax(np.sum(train_class,axis=0))])
     #print(np.sum(sanity_class,axis=0))
 
     print("w2v test accuracy: %f" % test_accuracy)
