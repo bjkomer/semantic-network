@@ -32,7 +32,7 @@ def data():
     nb_dim=50
     (X_train, y_train), (X_test, y_test) = cifar100.load_data(label_mode='fine')
 
-    # convert class vectors to binary class matrices
+    # convert class vectors to w2v class matrices
     Y_train = get_w2v_labels(y_train, dim=nb_dim)
     Y_test = get_w2v_labels(y_test, dim=nb_dim)
 
