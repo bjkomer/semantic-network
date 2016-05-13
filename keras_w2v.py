@@ -14,12 +14,15 @@ save it in a different format, load it in Python 3 and repickle it.
 
 from __future__ import print_function
 
+pretrain = True # if the model should load pretrained weights
+pretrain_name = 'w2v_original_rmsprop_mse_d50_e100_aTrue'
+
 training = True # if the network should train, or just load the weights from elsewhere
-optimizer = 'sgd'#'rmsprop'
+optimizer = 'sgd'#'rmsprop'#adam'#rmsprop'#'sgd'#'rmsprop'
 model_style = 'original'#'original'#'wider'#'nodrop_wider'#'original'#'wider'
-nb_dim = 25#200 #TODO: try lower numbers
-nb_epoch = 1000#200#1500
-learning_rate = 0.5#0.01
+nb_dim = 50#200 #TODO: try lower numbers
+nb_epoch = 500#200#1500
+learning_rate = 0.25#0.5#0.01
 objective='mse'#'cosine_proximity'#'mse'#'mse'
 data_augmentation = True
 more_augmentation = False#True
@@ -28,6 +31,8 @@ if more_augmentation:
     model_name += '_moreaug'
 if optimizer == 'sgd':
     model_name += '_lr%s' % learning_rate
+if pretrain:
+    model_name += '_pre'
 gpu = 'gpu2'
 
 import os
@@ -232,10 +237,8 @@ elif optimizer == 'rmsprop':
 else:
     model.compile(loss=objective, optimizer=optimizer)
 
-X_train = X_train.astype('float32')
-X_test = X_test.astype('float32')
-X_train /= 255
-X_test /= 255
+if pretrain:
+    model.load_weights('net_output/%s_weights.h5' % pretrain_name)
 
 if training:
     if not data_augmentation:
@@ -286,6 +289,8 @@ if training:
     model.save_weights('net_output/w2v_%s_weights.h5' % model_name)
     json_string = model.to_json()
     open('net_output/w2v_%s_architecture.json' % model_name, 'w').write(json_string)
+    if pretrain:
+        history.history['pretrain_name'] = pretrain_name
     pickle.dump(history.history, open('net_output/w2v_%s_history.p' % model_name,'w'))
     print("saving to: w2v_%s" % model_name)
     """
