@@ -2,13 +2,13 @@
 
 from __future__ import print_function
 
-pretrain = False#True # if the model should load pretrained weights
-pretrain_name = 'hierarchy_split_rmsprop_mse_e300_aFalse'#'2output_original_rmsprop_categorical_crossentropy_e7_aFalse'
+pretrain = True#False#True # if the model should load pretrained weights
+pretrain_name = '2output_original_rmsprop_categorical_crossentropy_e15_aFalse'#'hierarchy_split_rmsprop_mse_e300_aFalse'#'2output_original_rmsprop_categorical_crossentropy_e7_aFalse'
 
 training = True # if the network should train, or just load the weights from elsewhere
-optimizer = 'rmsprop'
-model_style = 'split'#'original'#'nodroporiginal'#'original'#'split'#'wider'
-nb_epoch = 200#50#500#500
+optimizer = 'sgd'#'rmsprop'
+model_style = 'original'#'split'#'original'#'nodroporiginal'#'original'#'split'#'wider'
+nb_epoch = 20#200#50#500#500
 learning_rate = 0.01#0.01
 data_augmentation = False#True
 objective = 'categorical_crossentropy'#'mse' # objective function to use
