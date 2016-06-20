@@ -49,6 +49,7 @@ data_prefix = 'data/cifar_100_caffe_hdf5/'
 #fnametest_label = data_prefix + 'test_w2v_label.h5'
 DIM = 200
 NUM_CLASSES = 100
+NUM_COARSE_CLASSES = 20
 """
 NUM_TEST = 10000
 print("Finding unique label vector set")
@@ -89,6 +90,81 @@ def accuracy_w2v(prediction, actual, dim):
         if np.linalg.norm(actual[i] - best_vector) < TOL:
             correct += 1
     return correct / num, pred_class
+
+# Two ways of measuring this. One is if it is closest to any of the fine vectors in the coarse category, it is considered correct
+# The other is if it is closest to the mean vector of the fine vectors (i.e. coarse vector) then it is correct
+def accuracy_w2v_coarse(prediction, actual, dim):
+    fnamelist_label = data_prefix + 'ordered_w2v_labels_%sdim.h5'%dim
+    flist_w2v = h5py.File(fnamelist_label, 'r')
+    all_vectors = np.zeros((NUM_CLASSES, DIM))
+    all_vectors = flist_w2v['label_w2v'][()]
+    all_coarse_vectors = np.zeros((NUM_COARSE_CLASSES, DIM))
+    
+    # Average the five fine vectors into one coarse vector
+    for i, v in enumerate(all_vectors):
+        all_coarse_vectors[i/5,:] += all_vectors[i,:] / 5.
+
+    num = len(actual)
+    correct = 0.0
+    correct_coarse = 0.0
+    correct_coarse_v2 = 0.0
+    pred_class = np.zeros((num, 100)) # which class number was being predicted
+    pred_coarse_class = np.zeros((num, 20)) # which coarse class number was being predicted
+    pred_coarse_class_v2 = np.zeros((num, 20)) # which coarse class number was being predicted in version 2 method
+    for i in range(num):
+        best_diff = None
+        best_vector = None
+        best_class = None # index of the best class
+        best_coarse_class = None # index of the best coarse class
+        
+        best_diff_v2 = None
+        best_vector_v2 = None
+        best_coarse_class_v2 = None # index of the best coarse class for version two of accuracy metric
+        actual_class_v2 = None
+        
+        best_diff_ac_v2 = None # used for finding the 'actual' correct vector for coarse classification version 2
+
+        for j, v in enumerate(all_vectors):
+            diff = np.linalg.norm(prediction[i] - v)
+            if (best_diff is None) or (diff < best_diff):
+                best_diff = diff
+                best_vector = v
+                best_class = j
+                best_coarse_class = j / 5
+            
+            diff = np.linalg.norm(actual[i] - v)
+            if (best_diff_ac_v2 is None) or (diff < best_diff_ac_v2):
+                best_diff_ac_v2 = diff
+                best_vector_ac_v2 = v
+                actual_class_v2 = j / 5
+        
+        for j, v in enumerate(all_coarse_vectors):
+            diff = np.linalg.norm(prediction[i] - v)
+            if (best_diff_v2 is None) or (diff < best_diff_v2):
+                best_diff_v2 = diff
+                best_vector_v2 = v
+                best_coarse_class_v2 = j
+            
+        
+        # check that the vector is the same within some numerical tolerance
+        pred_class[i,best_class] += 1
+        pred_coarse_class[i,best_coarse_class] += 1
+        pred_coarse_class_v2[i,best_coarse_class_v2] += 1
+        if np.linalg.norm(actual[i] - best_vector) < TOL:
+            correct += 1
+        
+        if best_coarse_class_v2 == actual_class_v2:
+            correct_coarse_v2 += 1
+
+        # figure out coarse correctness
+        # need to first get the set of fine vectors for the coarse class
+        coarse_vectors = all_vectors[best_coarse_class*5:(best_coarse_class+1)*5]
+        for v in coarse_vectors:
+            if np.linalg.norm(v - best_vector) < TOL:
+                correct_coarse += 1
+                break
+
+    return correct / num, pred_class, correct_coarse / num, pred_coarse_class, correct_coarse_v2 / num, pred_coarse_class_v2
 
 def load_custom_weights(model, filepath, layer_indices=[0,1,2,3,4,5,6,7,8,9,10,11,14,15]):
     f = h5py.File(filepath, mode='r')

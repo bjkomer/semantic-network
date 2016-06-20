@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-gpu = 'gpu1'
+gpu = 'gpu0'
 nb_dim=200
 
 import os
@@ -143,9 +143,11 @@ elif 'w2v' in model_name:
     Y_predict_test = model.predict(X_test, batch_size=batch_size, verbose=1)
     Y_predict_train = model.predict(X_train, batch_size=batch_size, verbose=1)
 
-    test_accuracy, test_class = accuracy_w2v(Y_predict_test, Y_test, dim=nb_dim)
+    #test_accuracy, test_class = accuracy_w2v(Y_predict_test, Y_test, dim=nb_dim)
+    test_accuracy, test_class, test_accuracy_c, test_class_c, test_accuracy_c2, test_class_c2 = accuracy_w2v_coarse(Y_predict_test, Y_test, dim=nb_dim)
 
-    train_accuracy, train_class = accuracy_w2v(Y_predict_train, Y_train, dim=nb_dim)
+    #train_accuracy, train_class = accuracy_w2v(Y_predict_train, Y_train, dim=nb_dim)
+    train_accuracy, train_class, train_accuracy_c, train_class_c, train_accuracy_c2, train_class_c2 = accuracy_w2v_coarse(Y_predict_train, Y_train, dim=nb_dim)
 
     #sanity_accuracy, sanity_class = accuracy_w2v(Y_test, Y_test)
 
