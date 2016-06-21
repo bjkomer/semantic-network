@@ -38,6 +38,25 @@ nb_classes_coarse = 20
 model = model_from_json(open(fname_json).read())
 model.load_weights(fname_weights)
 
+def report_two_output_accuracy(X, Y_fine, Y_coarse, prefix_string='2output hierarchy'):
+    Y = np.concatenate((Y_coarse, Y_fine), axis=1)
+
+    # Test the model
+    Y_predict_dict = model.predict({'input':X}, batch_size=batch_size, verbose=1)
+
+    Y_predict_fine = Y_predict_dict['output_fine']
+    Y_predict_coarse = Y_predict_dict['output_coarse']
+
+    Y_predict = np.concatenate((Y_predict_coarse, Y_predict_fine), axis=1)
+
+    # Convert floating point vector to a clean binary vector with only two 1's
+    Y_predict_clean = clean_hierarchy_vec(Y_predict)
+    
+    accuracy, acc_coarse, acc_fine = accuracy_hierarchy(Y_predict_clean, Y)
+    print("%f accuracy: %f" % (prefix_string, accuracy))
+    print("%f coarse accuracy: %f" % (prefix_string, acc_coarse))
+    print("%f fine accuracy: %f" % (prefix_string, acc_fine))
+
 if 'hierarchy' in model_name:
     # Load and format data
     (X_train, y_train_fine), (X_test, y_test_fine) = cifar100.load_data(label_mode='fine')
@@ -117,6 +136,37 @@ elif '2output' in model_name or 'keras_cifar100' in model_name:
     print("2output hierarchy train accuracy: %f" % train_accuracy)
     print("2output hierarchy train coarse accuracy: %f" % train_acc_coarse)
     print("2output hierarchy train fine accuracy: %f" % train_acc_fine)
+
+    # For generalization test, show the accuracy on the things it was not trained on
+    if '_gen' in model_name:
+        # Indices of the things it was trained on
+        indices_base = y_train_fine[y_train_fine % 5 != 0]
+        y_train_fine_base = y_train_fine[indices]
+        y_train_coarse_base = y_train_coarse[indices]
+        X_train_base = X_train[indices]
+        
+        # Indices of the things it was not trained on
+        indices_gen = y_train_fine[y_train_fine % 5 == 0]
+        y_train_fine_gen = y_train_fine[indices]
+        y_train_coarse_gen = y_train_coarse[indices]
+        X_train_gen = X_train[indices]
+        
+        indices_base_test = y_test_fine[y_test_fine % 5 != 0]
+        y_test_fine_base = y_test_fine[indices_test]
+        y_test_coarse_base = y_test_coarse[indices_test]
+        X_test_base = X_test[indices_test]
+        
+        indices_gen_test = y_test_fine[y_test_fine % 5 == 0]
+        y_test_fine_gen = y_test_fine[indices_test]
+        y_test_coarse_gen = y_test_coarse[indices_test]
+        X_test_gen = X_test[indices_test]
+
+        report_two_output_accuracy(X_train_gen, y_train_fine_gen, y_train_coarse_gen, "2output hierarchy train gen")
+        report_two_output_accuracy(X_test_gen, y_test_fine_gen, y_test_coarse_gen, "2output hierarchy test gen")
+        
+        report_two_output_accuracy(X_train_base, y_train_fine_base, y_train_coarse_base, "2output hierarchy train base")
+        report_two_output_accuracy(X_test_base, y_test_fine_base, y_test_coarse_base, "2output hierarchy test base")
+
 elif 'w2v' in model_name:
     # Load and format the data
     (X_train, y_train), (X_test, y_test) = cifar100.load_data(label_mode='fine')
