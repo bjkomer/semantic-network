@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-gpu = 'gpu0'
+gpu = 'gpu3'
 nb_dim=200
 
 import os
@@ -16,7 +16,7 @@ from keras.optimizers import SGD
 from keras.utils import np_utils
 import cPickle as pickle
 import numpy as np
-from network_utils import accuracy, accuracy_hierarchy, clean_hierarchy_vec, clean_vec, get_w2v_labels, accuracy_w2v, classes
+from network_utils import accuracy, accuracy_hierarchy, clean_hierarchy_vec, clean_vec, get_w2v_labels, accuracy_w2v, accuracy_w2v_coarse, classes
 
 # Open an IPython session if an exception is found
 import sys
@@ -231,6 +231,10 @@ elif 'w2v' in model_name:
 
     print("w2v test accuracy: %f" % test_accuracy)
     print("w2v train accuracy: %f" % train_accuracy)
+    print("w2v test coarse accuracy: %f" % test_accuracy_c)
+    print("w2v train coarse accuracy: %f" % train_accuracy_c)
+    print("w2v test coarse v2 accuracy: %f" % test_accuracy_c2)
+    print("w2v train coarse v2 accuracy: %f" % train_accuracy_c2)
     #print("w2v sanity test accuracy: %f" % sanity_accuracy)
 elif 'coarse' in model_name or 'fine' in model_name:
     # Load and format data
