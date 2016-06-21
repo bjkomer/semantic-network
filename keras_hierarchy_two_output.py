@@ -2,21 +2,30 @@
 
 from __future__ import print_function
 
-pretrain = True#False#True # if the model should load pretrained weights
-pretrain_name = '2output_original_rmsprop_categorical_crossentropy_e15_aFalse'#'hierarchy_split_rmsprop_mse_e300_aFalse'#'2output_original_rmsprop_categorical_crossentropy_e7_aFalse'
+# if the model is not trained on all classes and must generalize
+generalization = True
 
+pretrain = False#True # if the model should load pretrained weights
+#pretrain_name = '2output_original_rmsprop_categorical_crossentropy_e15_aFalse'#'hierarchy_split_rmsprop_mse_e300_aFalse'#'2output_original_rmsprop_categorical_crossentropy_e7_aFalse'
+#pretrain_name = '2output_original_adam_categorical_crossentropy_e30_b128_aFalse'
+#pretrain_name = '2output_deeper_adam_categorical_crossentropy_e151_b128_aFalse'
+pretrain_name = '2output_deeper_adam_categorical_crossentropy_e101_b128_aFalse_pre'
+
+batch_size = 128#32
 training = True # if the network should train, or just load the weights from elsewhere
-optimizer = 'sgd'#'rmsprop'
-model_style = 'original'#'split'#'original'#'nodroporiginal'#'original'#'split'#'wider'
-nb_epoch = 20#200#50#500#500
+optimizer = 'adam'#'sgd'#'rmsprop'
+model_style = 'deeper'#'muchdeeper'#'original'#'nodroporiginal'#'original'#'split'#'wider'
+nb_epoch = 301#703#200#50#500#500
 learning_rate = 0.01#0.01
 data_augmentation = False#True
 objective = 'categorical_crossentropy'#'mse' # objective function to use
-model_name = '%s_%s_%s_e%s_a%s' % (model_style, optimizer, objective, nb_epoch, data_augmentation)
+model_name = '%s_%s_%s_e%s_b%s_a%s' % (model_style, optimizer, objective, nb_epoch, batch_size, data_augmentation)
 if optimizer == 'sgd':
     model_name += '_lr%s' % learning_rate
 if pretrain:
     model_name += '_pre'
+if generalization:
+    model_name += '_gen'
 gpu = 'gpu3'
 
 import os
@@ -37,7 +46,6 @@ import sys
 from IPython.core import ultratb
 sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=1)
 
-batch_size = 32
 nb_classes_fine = 100
 nb_classes_coarse = 20
 
@@ -49,6 +57,19 @@ img_channels = 3
 # the data, shuffled and split between train and test sets
 (X_train, y_train_fine), (X_test, y_test_fine) = cifar100.load_data(label_mode='fine')
 (_, y_train_coarse), (_, y_test_coarse) = cifar100.load_data(label_mode='coarse')
+
+# remove 1/5 of the categories from training
+if generalization:
+    indices = y_train_fine[y_train_fine % 5 != 0]
+    y_train_fine = y_train_fine[indices]
+    y_train_coarse = y_train_coarse[indices]
+    X_train = X_train[indices]
+    
+    indices_test = y_test_fine[y_test_fine % 5 != 0]
+    y_test_fine = y_test_fine[indices_test]
+    y_test_coarse = y_test_coarse[indices_test]
+    X_test = X_test[indices_test]
+
 print('X_train shape:', X_train.shape)
 print(X_train.shape[0], 'train samples')
 print(X_test.shape[0], 'test samples')
@@ -126,7 +147,89 @@ if model_style == 'original':
                    name='dense_f', input='drop3')
     model.add_node(Activation('softmax'),
                    name='soft_f', input='dense_f')
-if model_style == 'nodroporiginal':
+elif 'deeper' in model_style:
+
+    model.add_node(Convolution2D(32, 3, 3, border_mode='same',
+                            input_shape=(img_channels, img_rows, img_cols)),
+                   name='conv1', input='input')
+    model.add_node(Activation('relu'),
+                   name='relu1', input='conv1')
+    model.add_node(Convolution2D(32, 3, 3, border_mode='same'),
+                   name='conv2', input='relu1')
+    model.add_node(Activation('relu'),
+                   name='relu2', input='conv2')
+    model.add_node(MaxPooling2D(pool_size=(2, 2)),
+                   name='pool1', input='relu2')
+    model.add_node(Dropout(0.25),
+                   name='drop1', input='pool1')
+
+    model.add_node(Convolution2D(64, 3, 3, border_mode='same'),
+                   name='conv3', input='drop1')
+    model.add_node(Activation('relu'),
+                   name='relu3', input='conv3')
+    model.add_node(Convolution2D(64, 3, 3, border_mode='same'), # New addition
+                   name='conv4', input='relu3')
+    model.add_node(Activation('relu'),
+                   name='relu4', input='conv4')
+    model.add_node(MaxPooling2D(pool_size=(2, 2)),
+                   name='pool2', input='relu4')
+    model.add_node(Dropout(0.25),
+                   name='drop2', input='pool2')
+
+    model.add_node(Convolution2D(96, 3, 3, border_mode='same'),
+                   name='conv5', input='drop2')
+    model.add_node(Activation('relu'),
+                   name='relu5', input='conv5')
+    model.add_node(Convolution2D(96, 3, 3, border_mode='same'), # New addition
+                   name='conv6', input='relu5')
+    model.add_node(Activation('relu'),
+                   name='relu6', input='conv6')
+    model.add_node(MaxPooling2D(pool_size=(2, 2)),
+                   name='pool3', input='relu6')
+    model.add_node(Dropout(0.25),
+                   name='drop3', input='pool3')
+
+    #FIXME this is causing a bug in keras for some reason
+    if model_style == 'muchdeeper':
+        model.add_node(Convolution2D(128, 3, 3, border_mode='same'),
+                       name='conv7', input='drop3')
+        model.add_node(Activation('relu'),
+                       name='relu7', input='conv7')
+        model.add_node(Convolution2D(128, 3, 3, border_mode='same'),
+                       name='conv8', input='relu7')
+        model.add_node(Activation('relu'),
+                       name='relu8', input='conv8')
+        model.add_node(MaxPooling2D(pool_size=(2, 2)),
+        #model.add_node(MaxPooling2D(pool_size=(1, 1)),
+                       name='pool4', input='relu8')
+        model.add_node(Dropout(0.25),
+                       name='drop4', input='pool4')
+        #               name='drop4', input='relu8')
+        model.add_node(Flatten(),
+                       name='flat1', input='drop4')
+    else:
+
+        model.add_node(Flatten(),
+                       name='flat1', input='drop3')
+    model.add_node(Dense(512),
+                   name='dense1', input='flat1')
+    model.add_node(Activation('relu'),
+                   name='relu_final', input='dense1')
+    model.add_node(Dropout(0.5),
+                   name='drop_final', input='relu_final')
+
+    #model.add_node(Dense(nb_classes_coarse + nb_classes_fine),
+    #               name='dense2', input='drop3')
+    model.add_node(Dense(nb_classes_coarse),
+                   name='dense_c', input='drop_final')
+    model.add_node(Activation('softmax'),
+                   name='soft_c', input='dense_c')
+
+    model.add_node(Dense(nb_classes_fine),
+                   name='dense_f', input='drop_final')
+    model.add_node(Activation('softmax'),
+                   name='soft_f', input='dense_f')
+elif model_style == 'nodroporiginal':
 
     model.add_node(Convolution2D(32, 3, 3, border_mode='same',
                             input_shape=(img_channels, img_rows, img_cols)),
