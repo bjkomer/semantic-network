@@ -38,7 +38,10 @@ nb_classes_coarse = 20
 model = model_from_json(open(fname_json).read())
 model.load_weights(fname_weights)
 
-def report_two_output_accuracy(X, Y_fine, Y_coarse, prefix_string='2output hierarchy'):
+def report_two_output_accuracy(X, y_fine, y_coarse, prefix_string='2output hierarchy'):
+    Y_fine = np_utils.to_categorical(y_fine, nb_classes_fine)
+    Y_coarse = np_utils.to_categorical(y_coarse, nb_classes_coarse)
+    
     Y = np.concatenate((Y_coarse, Y_fine), axis=1)
 
     # Test the model
@@ -56,6 +59,21 @@ def report_two_output_accuracy(X, Y_fine, Y_coarse, prefix_string='2output hiera
     print("%f accuracy: %f" % (prefix_string, accuracy))
     print("%f coarse accuracy: %f" % (prefix_string, acc_coarse))
     print("%f fine accuracy: %f" % (prefix_string, acc_fine))
+
+def report_w2v_accuracy(X, y, nb_dim, prefix_string='w2v'):
+    Y = get_w2v_labels(y, dim=nb_dim)
+
+    Y_predict = model.predict(X, batch_size=batch_size, verbose=1)
+
+    accuracy, class_, accuracy_c, class_c, accuracy_c2, class_c2 = accuracy_w2v_coarse(Y_predict, Y, dim=nb_dim)
+
+    """
+    print(np.sum(class_,axis=0))
+    print(np.argmax(np.sum(class_,axis=0)))
+    print(classes[np.argmax(np.sum(class_,axis=0))])
+    """
+
+    print("%f accuracy: %f" % (prefix_string, train_accuracy))
 
 if 'hierarchy' in model_name:
     # Load and format data
@@ -102,6 +120,8 @@ elif '2output' in model_name or 'keras_cifar100' in model_name:
     X_train /= 255
     X_test /= 255
     
+    #TODO: replace the following things with the convenience function
+
     Y_train_fine = np_utils.to_categorical(y_train_fine, nb_classes_fine)
     Y_train_coarse = np_utils.to_categorical(y_train_coarse, nb_classes_coarse)
     Y_test_fine = np_utils.to_categorical(y_test_fine, nb_classes_fine)
