@@ -73,7 +73,9 @@ def report_w2v_accuracy(X, y, nb_dim, prefix_string='w2v'):
     print(classes[np.argmax(np.sum(class_,axis=0))])
     """
 
-    print("%f accuracy: %f" % (prefix_string, train_accuracy))
+    print("%f accuracy: %f" % (prefix_string, accuracy))
+    print("%f coarse accuracy: %f" % (prefix_string, accuracy_c))
+    print("%f coarse v2 accuracy: %f" % (prefix_string, accuracy_c2))
 
 if 'hierarchy' in model_name:
     # Load and format data
@@ -235,7 +237,34 @@ elif 'w2v' in model_name:
     print("w2v train coarse accuracy: %f" % train_accuracy_c)
     print("w2v test coarse v2 accuracy: %f" % test_accuracy_c2)
     print("w2v train coarse v2 accuracy: %f" % train_accuracy_c2)
-    #print("w2v sanity test accuracy: %f" % sanity_accuracy)
+    
+    # For generalization test, show the accuracy on the things it was not trained on
+    if '_gen' in model_name:
+        # Indices of the things it was trained on
+        indices_base = y_train[y_train % 5 != 0]
+        y_train_base = y_train[indices]
+        X_train_base = X_train[indices]
+        
+        # Indices of the things it was not trained on
+        indices_gen = y_train[y_train % 5 == 0]
+        y_train_gen = y_train[indices]
+        X_train_gen = X_train[indices]
+        
+        indices_base_test = y_test[y_test % 5 != 0]
+        y_test_base = y_test[indices_test]
+        X_test_base = X_test[indices_test]
+        
+        indices_gen_test = y_test[y_test % 5 == 0]
+        y_test_gen = y_test[indices_test]
+        X_test_gen = X_test[indices_test]
+
+        report_w2v_accuracy(X_train_gen, y_train_gen, nb_dim, "w2v train gen")
+        report_w2v_accuracy(X_test_gen, y_test_gen, nb_dim, "w2v test gen")
+        
+        report_w2v_accuracy(X_train_base, y_train_base, nb_dim, "w2v train base")
+        report_w2v_accuracy(X_test_base, y_test_base, nb_dim, "w2v test base")
+        
+
 elif 'coarse' in model_name or 'fine' in model_name:
     # Load and format data
     (X_train, y_train_fine), (X_test, y_test_fine) = cifar100.load_data(label_mode='fine')
