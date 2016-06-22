@@ -5,6 +5,15 @@ from __future__ import print_function
 gpu = 'gpu3'
 nb_dim=200
 
+import sys
+if len(sys.argv) == 3:
+    model_name = sys.argv[1]
+    gpu = sys.argv[2]
+elif len(sys.argv) == 2:
+    model_name = sys.argv[1]
+else:
+    model_name = 'hierarchy_wider_rmsprop_e50_aFalse'
+
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
 from keras.datasets import cifar10, cifar100
@@ -19,14 +28,9 @@ import numpy as np
 from network_utils import accuracy, accuracy_hierarchy, clean_hierarchy_vec, clean_vec, get_w2v_labels, accuracy_w2v, accuracy_w2v_coarse, classes
 
 # Open an IPython session if an exception is found
-import sys
 from IPython.core import ultratb
 sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=1)
 
-if len(sys.argv) > 1:
-    model_name = sys.argv[1]
-else:
-    model_name = 'hierarchy_wider_rmsprop_e50_aFalse'
 fname_json = 'net_output/' + model_name + '_architecture.json'
 fname_weights = 'net_output/' + model_name + '_weights.h5'
 
