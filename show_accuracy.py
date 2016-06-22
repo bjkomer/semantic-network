@@ -166,23 +166,23 @@ elif '2output' in model_name or 'keras_cifar100' in model_name:
     # For generalization test, show the accuracy on the things it was not trained on
     if '_gen' in model_name:
         # Indices of the things it was trained on
-        indices_base = np.where(y_train_fine % 5 != 0)
+        indices_base = np.where(y_train_fine % 5 != 0)[0]
         y_train_fine_base = y_train_fine[indices_base]
         y_train_coarse_base = y_train_coarse[indices_base]
         X_train_base = X_train[indices_base]
         
         # Indices of the things it was not trained on
-        indices_gen = np.where(y_train_fine % 5 == 0)
+        indices_gen = np.where(y_train_fine % 5 == 0)[0]
         y_train_fine_gen = y_train_fine[indices_gen]
         y_train_coarse_gen = y_train_coarse[indices_gen]
         X_train_gen = X_train[indices_gen]
         
-        indices_base_test = np.where(y_test_fine % 5 != 0)
+        indices_base_test = np.where(y_test_fine % 5 != 0)[0]
         y_test_fine_base = y_test_fine[indices_base_test]
         y_test_coarse_base = y_test_coarse[indices_base_test]
         X_test_base = X_test[indices_base_test]
         
-        indices_gen_test = np.where(y_test_fine % 5 == 0)
+        indices_gen_test = np.where(y_test_fine % 5 == 0)[0]
         y_test_fine_gen = y_test_fine[indices_gen_test]
         y_test_coarse_gen = y_test_coarse[indices_gen_test]
         X_test_gen = X_test[indices_gen_test]
@@ -249,20 +249,20 @@ elif 'w2v' in model_name:
     # For generalization test, show the accuracy on the things it was not trained on
     if '_gen' in model_name or True:
         # Indices of the things it was trained on
-        indices_base = np.where(y_train % 5 != 0)
+        indices_base = np.where(y_train % 5 != 0)[0]
         y_train_base = y_train[indices_base]
         X_train_base = X_train[indices_base]
         
         # Indices of the things it was not trained on
-        indices_gen = np.where(y_train % 5 == 0)
+        indices_gen = np.where(y_train % 5 == 0)[0]
         y_train_gen = y_train[indices_gen]
         X_train_gen = X_train[indices_gen]
         
-        indices_base_test = np.where(y_test % 5 != 0)
+        indices_base_test = np.where(y_test % 5 != 0)[0]
         y_test_base = y_test[indices_base_test]
         X_test_base = X_test[indices_base_test]
         
-        indices_gen_test = np.where(y_test % 5 == 0)
+        indices_gen_test = np.where(y_test % 5 == 0)[0]
         y_test_gen = y_test[indices_gen_test]
         X_test_gen = X_test[indices_gen_test]
 
