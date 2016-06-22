@@ -3,6 +3,9 @@
 # Only using the coarse labels
 from __future__ import print_function
 
+# if the model is not trained on all classes and must generalize
+generalization = True
+
 optimizer = 'sgd'#'rmsprop'
 model_style = 'original'#'original'#'wider'#'nodrop_wider'#'original'#'wider'
 nb_epoch = 200#1500
@@ -14,7 +17,9 @@ if more_augmentation:
     model_name += '_moreaug'
 if optimizer == 'sgd':
     model_name += '_lr%s' % learning_rate
-gpu = 'gpu2'
+if generalization:
+    model_name += '_gen'
+gpu = 'gpu1'
 
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
@@ -27,6 +32,7 @@ from keras.optimizers import SGD
 from keras.utils import np_utils
 import cPickle as pickle
 from network_utils import accuracy, load_custom_weights
+import numpy as np
 
 # Open an IPython session if an exception is found
 import sys
@@ -45,6 +51,19 @@ img_channels = 3
 # the data, shuffled and split between train and test sets
 (X_train, y_train_fine), (X_test, y_test_fine) = cifar100.load_data(label_mode='fine')
 (_, y_train_coarse), (_, y_test_coarse) = cifar100.load_data(label_mode='coarse')
+
+# remove 1/5 of the categories from training
+if generalization:
+    indices = np.where(y_train_fine % 5 != 0)[0]
+    y_train_fine = y_train_fine[indices]
+    y_train_coarse = y_train_coarse[indices]
+    X_train = X_train[indices]
+    
+    indices_test = np.where(y_test_fine % 5 != 0)[0]
+    y_test_fine = y_test_fine[indices_test]
+    y_test_coarse = y_test_coarse[indices_test]
+    X_test = X_test[indices_test]
+
 print('X_train shape:', X_train.shape)
 print(X_train.shape[0], 'train samples')
 print(X_test.shape[0], 'test samples')
