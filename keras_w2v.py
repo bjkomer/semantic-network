@@ -14,26 +14,40 @@ save it in a different format, load it in Python 3 and repickle it.
 
 from __future__ import print_function
 
-pretrain = True # if the model should load pretrained weights
-pretrain_name = 'w2v_original_rmsprop_mse_d50_e100_aTrue'
+# if the model is not trained on all classes and must generalize
+generalization = True
 
+pretrain = False#True # if the model should load pretrained weights
+#pretrain_name = 'w2v_original_rmsprop_mse_d50_e100_aTrue'
+#pretrain_name = 'w2v_original_sgd_mse_d50_e501_aTrue_lr0.1_pre' # this one has 0.3021 test and .40358 train accuracy
+#pretrain_name = 'w2v_original_sgd_mse_d50_e502_aTrue_lr0.1_pre' # this one has 0.3112 test and .4197 train accuracy
+#pretrain_name = 'w2v_original_sgd_mse_d50_e503_aTrue_lr0.025_pre' # this one has 0.3127 test and .42788 train accuracy
+#pretrain_name = 'w2v_original_sgd_mse_d50_e504_aTrue_lr0.05_pre' # this one has 0.3143 test and .43166 train accuracy
+#pretrain_name = 'w2v_original_sgd_mse_d50_e1005_aTrue_lr0.05_pre' # this one has 0.3177 test and .44104 train accuracy
+#pretrain_name = 'w2v_original_sgd_mse_d50_e1006_b32_aTrue_lr0.05_pre' # this one has 0.3249 test and .45256 train accuracy
+pretrain_name = 'w2v_original_sgd_mse_d50_e2007_b64_aTrue_lr0.05_pre' # this one has 0.3261 test and .45982 train accuracy
+
+
+batch_size = 64#128#32
 training = True # if the network should train, or just load the weights from elsewhere
-optimizer = 'sgd'#'rmsprop'#adam'#rmsprop'#'sgd'#'rmsprop'
+optimizer = 'adam'#rmsprop'#'sgd'#'rmsprop'
 model_style = 'original'#'original'#'wider'#'nodrop_wider'#'original'#'wider'
 nb_dim = 50#200 #TODO: try lower numbers
-nb_epoch = 500#200#1500
-learning_rate = 0.25#0.5#0.01
+nb_epoch = 1000#3008#200#1500
+learning_rate = .3#0.05#0.5#0.01
 objective='mse'#'cosine_proximity'#'mse'#'mse'
 data_augmentation = True
 more_augmentation = False#True
-model_name = '%s_%s_%s_d%s_e%s_a%s' % (model_style, optimizer, objective, nb_dim, nb_epoch, data_augmentation)
+model_name = '%s_%s_%s_d%s_e%s_b%s_a%s' % (model_style, optimizer, objective, nb_dim, nb_epoch, batch_size, data_augmentation)
 if more_augmentation:
     model_name += '_moreaug'
 if optimizer == 'sgd':
     model_name += '_lr%s' % learning_rate
 if pretrain:
     model_name += '_pre'
-gpu = 'gpu2'
+if generalization:
+    model_name += '_gen'
+gpu = 'gpu3'
 
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
@@ -53,7 +67,6 @@ import sys
 from IPython.core import ultratb
 sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=1)
 
-batch_size = 32
 nb_classes = 100
 
 # input image dimensions
@@ -63,11 +76,24 @@ img_channels = 3
 
 # the data, shuffled and split between train and test sets
 (X_train, y_train), (X_test, y_test) = cifar100.load_data(label_mode='fine')
+
+print(errorzz)
+
+# remove 1/5 of the categories from training
+if generalization:
+    indices = np.where(y_train % 5 != 0)
+    y_train = y_train[indices]
+    X_train = X_train[indices]
+    
+    indices_test = np.where(y_test % 5 != 0)
+    y_test = y_test[indices_test]
+    X_test = X_test[indices_test]
+
 print('X_train shape:', X_train.shape)
 print(X_train.shape[0], 'train samples')
 print(X_test.shape[0], 'test samples')
 
-# convert class vectors to binary class matrices
+# convert class vectors to w2v class matrices
 Y_train = get_w2v_labels(y_train, dim=nb_dim)
 Y_test = get_w2v_labels(y_test, dim=nb_dim)
 print('y_train shape:', y_train.shape)
