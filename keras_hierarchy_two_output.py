@@ -60,12 +60,12 @@ img_channels = 3
 
 # remove 1/5 of the categories from training
 if generalization:
-    indices = np.where(y_train_fine % 5 != 0)
+    indices = np.where(y_train_fine % 5 != 0)[0]
     y_train_fine = y_train_fine[indices]
     y_train_coarse = y_train_coarse[indices]
     X_train = X_train[indices]
     
-    indices_test = np.where(y_test_fine % 5 != 0)
+    indices_test = np.where(y_test_fine % 5 != 0)[0]
     y_test_fine = y_test_fine[indices_test]
     y_test_coarse = y_test_coarse[indices_test]
     X_test = X_test[indices_test]

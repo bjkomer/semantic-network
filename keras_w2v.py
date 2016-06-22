@@ -33,7 +33,7 @@ training = True # if the network should train, or just load the weights from els
 optimizer = 'adam'#rmsprop'#'sgd'#'rmsprop'
 model_style = 'original'#'original'#'wider'#'nodrop_wider'#'original'#'wider'
 nb_dim = 50#200 #TODO: try lower numbers
-nb_epoch = 1000#3008#200#1500
+nb_epoch = 300#3008#200#1500
 learning_rate = .3#0.05#0.5#0.01
 objective='mse'#'cosine_proximity'#'mse'#'mse'
 data_augmentation = True
@@ -47,7 +47,7 @@ if pretrain:
     model_name += '_pre'
 if generalization:
     model_name += '_gen'
-gpu = 'gpu3'
+gpu = 'gpu1'
 
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
@@ -77,15 +77,13 @@ img_channels = 3
 # the data, shuffled and split between train and test sets
 (X_train, y_train), (X_test, y_test) = cifar100.load_data(label_mode='fine')
 
-print(errorzz)
-
 # remove 1/5 of the categories from training
 if generalization:
-    indices = np.where(y_train % 5 != 0)
+    indices = np.where(y_train % 5 != 0)[0]
     y_train = y_train[indices]
     X_train = X_train[indices]
     
-    indices_test = np.where(y_test % 5 != 0)
+    indices_test = np.where(y_test % 5 != 0)[0]
     y_test = y_test[indices_test]
     X_test = X_test[indices_test]
 
