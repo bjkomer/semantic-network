@@ -237,6 +237,10 @@ elif 'w2v' in model_name:
     print("w2v train coarse accuracy: %f" % train_accuracy_c)
     print("w2v test coarse v2 accuracy: %f" % test_accuracy_c2)
     print("w2v train coarse v2 accuracy: %f" % train_accuracy_c2)
+     
+    # Sanity checks
+    report_w2v_accuracy(X_train, y_train, nb_dim, "w2v train sanity")
+    report_w2v_accuracy(X_test, y_test, nb_dim, "w2v test sanity")
     
     # For generalization test, show the accuracy on the things it was not trained on
     if '_gen' in model_name:
