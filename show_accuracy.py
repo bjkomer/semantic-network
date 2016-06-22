@@ -5,6 +5,15 @@ from __future__ import print_function
 gpu = 'gpu3'
 nb_dim=200
 
+import sys
+if len(sys.argv) == 3:
+    model_name = sys.argv[1]
+    gpu = sys.argv[2]
+elif len(sys.argv) == 2:
+    model_name = sys.argv[1]
+else:
+    model_name = 'hierarchy_wider_rmsprop_e50_aFalse'
+
 import os
 os.environ["THEANO_FLAGS"] = "mode=FAST_RUN,device=%s,floatX=float32" % gpu
 from keras.datasets import cifar10, cifar100
@@ -19,14 +28,9 @@ import numpy as np
 from network_utils import accuracy, accuracy_hierarchy, clean_hierarchy_vec, clean_vec, get_w2v_labels, accuracy_w2v, accuracy_w2v_coarse, classes
 
 # Open an IPython session if an exception is found
-import sys
 from IPython.core import ultratb
 sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=1)
 
-if len(sys.argv) > 1:
-    model_name = sys.argv[1]
-else:
-    model_name = 'hierarchy_wider_rmsprop_e50_aFalse'
 fname_json = 'net_output/' + model_name + '_architecture.json'
 fname_weights = 'net_output/' + model_name + '_weights.h5'
 
@@ -162,23 +166,23 @@ elif '2output' in model_name or 'keras_cifar100' in model_name:
     # For generalization test, show the accuracy on the things it was not trained on
     if '_gen' in model_name:
         # Indices of the things it was trained on
-        indices_base = y_train_fine[y_train_fine % 5 != 0]
+        indices_base = np.where(y_train_fine % 5 != 0)
         y_train_fine_base = y_train_fine[indices_base]
         y_train_coarse_base = y_train_coarse[indices_base]
         X_train_base = X_train[indices_base]
         
         # Indices of the things it was not trained on
-        indices_gen = y_train_fine[y_train_fine % 5 == 0]
+        indices_gen = np.where(y_train_fine % 5 == 0)
         y_train_fine_gen = y_train_fine[indices_gen]
         y_train_coarse_gen = y_train_coarse[indices_gen]
         X_train_gen = X_train[indices_gen]
         
-        indices_base_test = y_test_fine[y_test_fine % 5 != 0]
+        indices_base_test = np.where(y_test_fine % 5 != 0)
         y_test_fine_base = y_test_fine[indices_base_test]
         y_test_coarse_base = y_test_coarse[indices_base_test]
         X_test_base = X_test[indices_base_test]
         
-        indices_gen_test = y_test_fine[y_test_fine % 5 == 0]
+        indices_gen_test = np.where(y_test_fine % 5 == 0)
         y_test_fine_gen = y_test_fine[indices_gen_test]
         y_test_coarse_gen = y_test_coarse[indices_gen_test]
         X_test_gen = X_test[indices_gen_test]
@@ -210,7 +214,7 @@ elif 'w2v' in model_name:
     #TODO: do the parameters that it is compiled with matter? might need to get them exactly
     optimizers = ['sgd','rmsprop','adam']
     losses = ['mse','msle']
-    model.compile(optimizer=optimizers[1],loss=losses[0])
+    model.compile(optimizer=optimizers[2],loss=losses[0])
 
     Y_predict_test = model.predict(X_test, batch_size=batch_size, verbose=1)
     Y_predict_train = model.predict(X_train, batch_size=batch_size, verbose=1)
@@ -239,26 +243,26 @@ elif 'w2v' in model_name:
     print("w2v train coarse v2 accuracy: %f" % train_accuracy_c2)
      
     # Sanity checks
-    report_w2v_accuracy(X_train, y_train, nb_dim, "w2v train sanity")
-    report_w2v_accuracy(X_test, y_test, nb_dim, "w2v test sanity")
+    #report_w2v_accuracy(X_train, y_train, nb_dim, "w2v train sanity")
+    #report_w2v_accuracy(X_test, y_test, nb_dim, "w2v test sanity")
     
     # For generalization test, show the accuracy on the things it was not trained on
-    if '_gen' in model_name:
+    if '_gen' in model_name or True:
         # Indices of the things it was trained on
-        indices_base = y_train[y_train % 5 != 0]
+        indices_base = np.where(y_train % 5 != 0)
         y_train_base = y_train[indices_base]
         X_train_base = X_train[indices_base]
         
         # Indices of the things it was not trained on
-        indices_gen = y_train[y_train % 5 == 0]
+        indices_gen = np.where(y_train % 5 == 0)
         y_train_gen = y_train[indices_gen]
         X_train_gen = X_train[indices_gen]
         
-        indices_base_test = y_test[y_test % 5 != 0]
+        indices_base_test = np.where(y_test % 5 != 0)
         y_test_base = y_test[indices_base_test]
         X_test_base = X_test[indices_base_test]
         
-        indices_gen_test = y_test[y_test % 5 == 0]
+        indices_gen_test = np.where(y_test % 5 == 0)
         y_test_gen = y_test[indices_gen_test]
         X_test_gen = X_test[indices_gen_test]
 
