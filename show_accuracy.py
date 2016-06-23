@@ -93,8 +93,8 @@ def report_accuracy(X, y, coarse=True, prefix_string='benchmark'):
     # Convert floating point vector to a clean binary vector with only two 1's
     Y_predict_clean = clean_vec(Y_predict)
     
-    accuracy = accuracy(Y_predict_clean, Y)
-    print("%s accuracy: %f" % (prefix_string, accuracy))
+    acc = accuracy(Y_predict_clean, Y)
+    print("%s accuracy: %f" % (prefix_string, acc))
 
 if 'hierarchy' in model_name:
     # Load and format data
@@ -309,7 +309,7 @@ elif 'coarse' in model_name or 'fine' in model_name:
     elif 'fine' in model_name:
         Y_train = Y_train_fine
         Y_test = Y_test_fine
-    print(X_test)
+    
     # Test the model
     Y_predict_test = model.predict(X_test, batch_size=batch_size, verbose=1)
     Y_predict_train = model.predict(X_train, batch_size=batch_size, verbose=1)
