@@ -96,9 +96,9 @@ def accuracy_w2v(prediction, actual, dim):
 def accuracy_w2v_coarse(prediction, actual, dim):
     fnamelist_label = data_prefix + 'ordered_w2v_labels_%sdim.h5'%dim
     flist_w2v = h5py.File(fnamelist_label, 'r')
-    all_vectors = np.zeros((NUM_CLASSES, DIM))
+    all_vectors = np.zeros((NUM_CLASSES, dim))
     all_vectors = flist_w2v['label_w2v'][()]
-    all_coarse_vectors = np.zeros((NUM_COARSE_CLASSES, DIM))
+    all_coarse_vectors = np.zeros((NUM_COARSE_CLASSES, dim))
     
     # Average the five fine vectors into one coarse vector
     for i, v in enumerate(all_vectors):
@@ -160,7 +160,7 @@ def accuracy_w2v_coarse(prediction, actual, dim):
         # need to first get the set of fine vectors for the coarse class
         coarse_vectors = all_vectors[best_coarse_class*5:(best_coarse_class+1)*5]
         for v in coarse_vectors:
-            if np.linalg.norm(v - best_vector) < TOL:
+            if np.linalg.norm(actual[i] - v) < TOL:
                 correct_coarse += 1
                 break
 
