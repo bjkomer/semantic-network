@@ -81,6 +81,21 @@ def report_w2v_accuracy(X, y, nb_dim, prefix_string='w2v'):
     print("%s coarse accuracy: %f" % (prefix_string, accuracy_c))
     print("%s coarse v2 accuracy: %f" % (prefix_string, accuracy_c2))
 
+def report_accuracy(X, y, coarse=True, prefix_string='benchmark'):
+    if coarse:
+        Y = np_utils.to_categorical(y, nb_classes_coarse)
+    else:
+        Y = np_utils.to_categorical(y, nb_classes_fine)
+    
+    # Test the model
+    Y_predict = model.predict(X, batch_size=batch_size, verbose=1)
+    
+    # Convert floating point vector to a clean binary vector with only two 1's
+    Y_predict_clean = clean_vec(Y_predict)
+    
+    acc = accuracy(Y_predict_clean, Y)
+    print("%s accuracy: %f" % (prefix_string, acc))
+
 if 'hierarchy' in model_name:
     # Load and format data
     (X_train, y_train_fine), (X_test, y_test_fine) = cifar100.load_data(label_mode='fine')
@@ -294,7 +309,7 @@ elif 'coarse' in model_name or 'fine' in model_name:
     elif 'fine' in model_name:
         Y_train = Y_train_fine
         Y_test = Y_test_fine
-    print(X_test)
+    
     # Test the model
     Y_predict_test = model.predict(X_test, batch_size=batch_size, verbose=1)
     Y_predict_train = model.predict(X_train, batch_size=batch_size, verbose=1)
@@ -313,5 +328,44 @@ elif 'coarse' in model_name or 'fine' in model_name:
     
     train_accuracy = accuracy(Y_predict_train_clean, Y_train)
     print(label_type + " train accuracy: %f" % train_accuracy)
+    
+    # For generalization test, show the accuracy on the things it was not trained on
+    if '_gen' in model_name:
+        coarse = 'coarse' in model_name
+        # Indices of the things it was trained on
+        indices_base = np.where(y_train_fine % 5 != 0)[0]
+        y_train_fine_base = y_train_fine[indices_base]
+        y_train_coarse_base = y_train_coarse[indices_base]
+        X_train_base = X_train[indices_base]
+        
+        # Indices of the things it was not trained on
+        indices_gen = np.where(y_train_fine % 5 == 0)[0]
+        y_train_fine_gen = y_train_fine[indices_gen]
+        y_train_coarse_gen = y_train_coarse[indices_gen]
+        X_train_gen = X_train[indices_gen]
+        
+        indices_base_test = np.where(y_test_fine % 5 != 0)[0]
+        y_test_fine_base = y_test_fine[indices_base_test]
+        y_test_coarse_base = y_test_coarse[indices_base_test]
+        X_test_base = X_test[indices_base_test]
+        
+        indices_gen_test = np.where(y_test_fine % 5 == 0)[0]
+        y_test_fine_gen = y_test_fine[indices_gen_test]
+        y_test_coarse_gen = y_test_coarse[indices_gen_test]
+        X_test_gen = X_test[indices_gen_test]
+
+        if coarse:
+            report_accuracy(X_train_gen, y_train_coarse_gen, coarse, "benchmark coarse train gen")
+            report_accuracy(X_test_gen, y_test_coarse_gen, coarse, "benchmark coarse test gen")
+            
+            report_accuracy(X_train_base, y_train_coarse_base, coarse, "benchmark coarse train base")
+            report_accuracy(X_test_base, y_test_coarse_base, coarse, "benchmark coarse test base")
+
+        else:
+            report_accuracy(X_train_gen, y_train_fine_gen, coarse, "benchmark fine train gen")
+            report_accuracy(X_test_gen, y_test_fine_gen, coarse, "benchmark fine test gen")
+            
+            report_accuracy(X_train_base, y_train_fine_base, coarse, "benchmark fine train base")
+            report_accuracy(X_test_base, y_test_fine_base, coarse, "benchmark fine test base")
 else:
     print("Unsure which accuracy measure to use based on file name")
