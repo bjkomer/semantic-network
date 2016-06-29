@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-gpu = 'gpu3'
+gpu = 'gpu1'
 nb_dim=200
 
 import sys
